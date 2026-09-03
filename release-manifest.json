@@ -25,9 +25,9 @@
         "sha256": "de75078a4bae3940d8e0a3bad3e2aafc23d9fd92486c07b5d0fc2d7e3d97cc75"
       },
       {
-        "bytes": 3687,
+        "bytes": 3674,
         "path": "runtime/artifact_store.py",
-        "sha256": "91adf1df82e1ea34f611a1337e7a8ff7a0b2cdf5d650be9cb7dc20e75ee71954"
+        "sha256": "046fb70490a7c48e5324293f39c4664017cd0f15b2ae84f0d727b5a8c98cd775"
       },
       {
         "bytes": 46257,
@@ -100,14 +100,14 @@
         "sha256": "4f46b7a846b3bc2a4a88e2a105b8eff6922e61791283c1d7b29ac8c5f2d67143"
       },
       {
-        "bytes": 7418,
+        "bytes": 7407,
         "path": "runtime/lark_cli_client.py",
-        "sha256": "212dab7a2b9860a81393fa3ec52aec5260ae578b1f1835a0f83f804f2e1738d7"
+        "sha256": "a8b5b60f8ffabf4ef8850a5cb0fb2455ebd064d2263dbc29d67446f7dea338a4"
       },
       {
-        "bytes": 4040,
+        "bytes": 4039,
         "path": "runtime/obsidian_adapter.py",
-        "sha256": "707680aa75c600d926f5b6e1444171e699720ddc705cc25a41fc2fa18c9d0577"
+        "sha256": "ba7517df74efd0b711df0f4cbce541e57f418a76c0efdcf5fd1f60287edb8d3c"
       },
       {
         "bytes": 1554,
@@ -165,14 +165,14 @@
         "sha256": "9626577a9d5a00baa9d1567ea4c969dbc8811a4c1fac59560621a0f98f12bc35"
       },
       {
-        "bytes": 7988,
+        "bytes": 7977,
         "path": "runtime/run_store.py",
-        "sha256": "98c3fb64f8a946d8c455a95662cddc3c7d60b76f74430d63fbb47c631b204c32"
+        "sha256": "9991bf99c0e99a9334b57ab9d0d177a91b4ff94a7724d282c7285a1ee6d6f186"
       },
       {
-        "bytes": 7339,
+        "bytes": 7492,
         "path": "runtime/save_contract.py",
-        "sha256": "875e743173ecc3cd3444b79891ed9b2afa4314a7d41f77b6b96ecbc0b243b6f2"
+        "sha256": "b80cf4e41ed697f90c2004e15046ae4d27022dff0c7f35712cc3784d0f4654db"
       },
       {
         "bytes": 4785,
@@ -280,11 +280,6 @@
         "sha256": "ee2359d67899aff196b9259b6fa062988b4525459f15570511beed4c8c49b9d2"
       },
       {
-        "bytes": 1104,
-        "path": "skills/content-gzh-analyzer/SKILL.md",
-        "sha256": "96fcbdc2a2684fe54258818f0068a9fb7336e530b1cefc96f6c3cad30b1927fb"
-      },
-      {
         "bytes": 43,
         "path": "skills/content-gzh-analyzer/agents/openai.yaml",
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
@@ -295,9 +290,9 @@
         "sha256": "2f71d2f00881c76b6320aff319977089acb88b105927fa1d2df4f6228cda3245"
       },
       {
-        "bytes": 988,
-        "path": "skills/content-gzh-context-retriever/SKILL.md",
-        "sha256": "551a5f0c2d3d61c99c3dbf4e2077e846273f4ba720e91ba48c4f85cf76ba3303"
+        "bytes": 1104,
+        "path": "skills/content-gzh-analyzer/SKILL.md",
+        "sha256": "96fcbdc2a2684fe54258818f0068a9fb7336e530b1cefc96f6c3cad30b1927fb"
       },
       {
         "bytes": 43,
@@ -310,13 +305,23 @@
         "sha256": "7ece90e37a0c3f415692b82b90a577045553e93d19d59e7c349d3061c3509c0a"
       },
       {
+        "bytes": 988,
+        "path": "skills/content-gzh-context-retriever/SKILL.md",
+        "sha256": "551a5f0c2d3d61c99c3dbf4e2077e846273f4ba720e91ba48c4f85cf76ba3303"
+      },
+      {
+        "bytes": 43,
+        "path": "skills/content-gzh-distribution-pack/agents/openai.yaml",
+        "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
+      },
+      {
         "bytes": 1059,
         "path": "skills/content-gzh-distribution-pack/SKILL.md",
         "sha256": "1142c4518b88db6bcb46c685708103a5f0c7acf197ea0945f2b87e302f748cf6"
       },
       {
         "bytes": 43,
-        "path": "skills/content-gzh-distribution-pack/agents/openai.yaml",
+        "path": "skills/content-gzh-headline/agents/openai.yaml",
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
       },
       {
@@ -325,24 +330,14 @@
         "sha256": "1502e5f188825830ab33d69f4b0952c003b6044b179f1aa4d9ed59337a5e5a4f"
       },
       {
-        "bytes": 43,
-        "path": "skills/content-gzh-headline/agents/openai.yaml",
-        "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
-      },
-      {
-        "bytes": 4045,
-        "path": "skills/content-gzh-slim/SKILL.md",
-        "sha256": "a003679e281b987fe4c69eb41f7e47d7302bd4cd15ca84d9aac131d252e50206"
-      },
-      {
         "bytes": 1660,
         "path": "skills/content-gzh-slim/references/runtime-commands.md",
         "sha256": "adacc2548e8e9c7d17fe10a52ae8ef4a04590be54bc4d09c32070a9bdf758ab8"
       },
       {
-        "bytes": 1047,
-        "path": "skills/content-gzh-writer/SKILL.md",
-        "sha256": "c49b5e19f1628d814d0a94878df0cbff5f853d9cedaa7278860001fbdb788760"
+        "bytes": 4045,
+        "path": "skills/content-gzh-slim/SKILL.md",
+        "sha256": "a003679e281b987fe4c69eb41f7e47d7302bd4cd15ca84d9aac131d252e50206"
       },
       {
         "bytes": 43,
@@ -358,6 +353,11 @@
         "bytes": 454,
         "path": "skills/content-gzh-writer/references/huati.md",
         "sha256": "635b3c69ab49a3d2582bedc99f21ee9548c37c6dbc5df8937251618be9d8b06b"
+      },
+      {
+        "bytes": 1047,
+        "path": "skills/content-gzh-writer/SKILL.md",
+        "sha256": "c49b5e19f1628d814d0a94878df0cbff5f853d9cedaa7278860001fbdb788760"
       }
     ],
     "skill_count": 6,
@@ -369,7 +369,7 @@
       "content-gzh-slim",
       "content-gzh-writer"
     ],
-    "tree_sha256": "c3195c2b95b60493442e6834fa5ca8798dde574f3b39068ddb01fc11e3d71a34"
+    "tree_sha256": "088e00ffb3e6346c17137d2226b3459b175c7b32f7c753b75b4300cc22608e74"
   },
   "schema_version": "content-gzh-slim-release-v1"
 }

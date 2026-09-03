@@ -66,8 +66,8 @@ class ObsidianAdapter:
             if existing != payload:
                 raise SaveAdapterError("Obsidian article name conflicts with different content")
             return {"backend": self.backend, "object_ref": str(path), "created": False}
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(payload)
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(payload.encode("utf-8"))
         return {"backend": self.backend, "object_ref": str(path), "created": True}
 
     def read_back(self, target: dict[str, Any]) -> dict[str, Any]:

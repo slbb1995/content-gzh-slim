@@ -327,7 +327,7 @@ class P5RuntimeTests(unittest.TestCase):
             safe = ObsidianAdapter(
                 Path(temporary) / "isolated", {target_ref: "051资料/articles"}
             )
-            self.assertTrue(str(safe._directory(target_ref)).endswith("051资料/articles"))
+            self.assertEqual(safe._directory(target_ref).parts[-2:], ("051资料", "articles"))
 
     def test_placeholder_or_fixture_residue_blocks_save(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

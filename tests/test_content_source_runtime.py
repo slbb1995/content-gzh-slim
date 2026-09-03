@@ -53,8 +53,9 @@ class ContentSourceRuntimeTests(unittest.TestCase):
                 f"# {name} Profile\n\n## 确认事实\n\n- {name}只讲可核验的业务事实。\n- {name}面向企业负责人。\n- {name}不承诺未经验证的结果。\n"
             )
             path = vault / "05-IP-Profile" / f"{name}.md"
-            path.write_text(text, encoding="utf-8")
-            profiles.append({"profile_id": profile_id, "display_name": name, "aliases": [f"{name}老师"], "object_ref": path.relative_to(vault).as_posix(), "status": "active", "is_primary": primary, "content_sha256": hashlib.sha256(text.encode()).hexdigest()})
+            payload = text.encode("utf-8")
+            path.write_bytes(payload)
+            profiles.append({"profile_id": profile_id, "display_name": name, "aliases": [f"{name}老师"], "object_ref": path.relative_to(vault).as_posix(), "status": "active", "is_primary": primary, "content_sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
         (vault / "03-业务知识库" / "业务.md").write_text(
             "---\nasset_id: KNO-1\ntype: business_knowledge_asset\nstatus: confirmed\nkeywords:\n  - 企业服务\napplicable_workflows:\n  - content-gzh-slim\n---\n\n# 企业服务事实\n\n已确认先做需求诊断。\n",
             encoding="utf-8",

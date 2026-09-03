@@ -53,9 +53,14 @@ def validate_target_preview(
         raise SaveContractError("save target was not a frozen preview")
     if not isinstance(target_ref, str) or not target_ref.strip() or "\x00" in target_ref:
         raise SaveContractError("save target ref is invalid")
-    if Path(target_ref).is_absolute():
+    if (
+        target_ref.startswith(("/", "\\"))
+        or re.match(r"^[A-Za-z]:[\\/]", target_ref)
+        or "\\" in target_ref
+        or Path(target_ref).is_absolute()
+    ):
         raise SaveContractError("absolute save target refs are forbidden")
-    parts = [part for part in urlsplit(target_ref).path.split("/") if part]
+    parts = [part for part in re.split(r"[\\/]", urlsplit(target_ref).path) if part]
     if ".." in parts:
         raise SaveContractError("save target escapes its controlled boundary")
     if any(is_protected_segment(part) for part in parts):

@@ -47,9 +47,9 @@ def main() -> int:
         "integrity": {"hash_algorithm": "sha256"},
     }
     manifest_path = ROOT / "release-manifest.json"
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest_path.write_bytes((json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"))
     checksum_paths = [*(ROOT / item["path"] for item in runtime_files), ROOT / "VERSION", ROOT / "LICENSE", manifest_path]
-    (ROOT / "SHA256SUMS").write_text("".join(f"{sha256(path)}  {path.relative_to(ROOT).as_posix()}\n" for path in checksum_paths), encoding="utf-8")
+    (ROOT / "SHA256SUMS").write_bytes("".join(f"{sha256(path)}  {path.relative_to(ROOT).as_posix()}\n" for path in checksum_paths).encode("utf-8"))
     print(f"Updated {version}: {len(runtime_files)} deliverable files, tree {tree}")
     return 0
 

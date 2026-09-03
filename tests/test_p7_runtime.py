@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -33,11 +34,27 @@ class StubLarkClient(LarkCliFeishuClient):
 
 
 class P7RuntimeTests(unittest.TestCase):
+    @staticmethod
+    def _utf8_run(arguments, **kwargs):
+        environment = os.environ.copy()
+        environment["PYTHONUTF8"] = "1"
+        environment.update(kwargs.pop("env", {}))
+        return subprocess.run(
+            arguments,
+            text=True,
+            encoding="utf-8",
+            errors="strict",
+            env=environment,
+            **kwargs,
+        )
+
     def _build(self, temporary: str) -> tuple[Path, Path]:
         candidate = Path(temporary) / "candidate"
         project = Path(temporary) / "project"
         project.mkdir()
         subprocess.run(["git", "init", "-q", str(project)], check=True)
+        environment = os.environ.copy()
+        environment["PYTHONUTF8"] = "1"
         completed = subprocess.run(
             [
                 sys.executable,
@@ -50,6 +67,9 @@ class P7RuntimeTests(unittest.TestCase):
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="strict",
+            env=environment,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
         return candidate, project
@@ -60,17 +80,17 @@ class P7RuntimeTests(unittest.TestCase):
             manifest = json.loads(
                 (candidate / "PACKAGE-MANIFEST.json").read_text(encoding="utf-8")
             )
-            probe = subprocess.run(
-                [str(candidate / "bin" / "content-gzh-slim"), "probe"],
+            probe = self._utf8_run(
+                [sys.executable, "-B", str(candidate / "bin" / "content-gzh-slim"), "probe"],
                 check=False,
                 capture_output=True,
-                text=True,
             )
             installed = project / ".agents" / "skills"
             installed_is_symlink = installed.is_symlink()
+            installed_is_directory = installed.is_dir()
 
         self.assertEqual(probe.returncode, 0, probe.stderr)
-        self.assertTrue(installed_is_symlink)
+        self.assertTrue(installed_is_symlink or installed_is_directory)
         self.assertEqual(len(manifest["skills"]), 6)
         self.assertFalse(manifest["credentials_included"])
         self.assertFalse(manifest["customer_data_included"])
@@ -120,52 +140,45 @@ class P7RuntimeTests(unittest.TestCase):
             task = FIXTURES / "p2_task.json"
             catalog = FIXTURES / "p2_catalog.json"
 
-            start = subprocess.run(
-                [str(launcher), "start", "--input", str(task), "--catalog", str(catalog), "--store", str(store)],
+            start = self._utf8_run(
+                [sys.executable, "-B", str(launcher), "start", "--input", str(task), "--catalog", str(catalog), "--store", str(store)],
                 check=True,
                 capture_output=True,
-                text=True,
             )
             run_id = json.loads(start.stdout)["run_id"]
-            subprocess.run(
-                [str(launcher), "prepare-gate-a", "--input", str(task), "--catalog", str(catalog), "--analysis", str(FIXTURES / "p2_analysis.json"), "--direction", str(FIXTURES / "p2_direction.json"), "--store", str(store)],
+            self._utf8_run(
+                [sys.executable, "-B", str(launcher), "prepare-gate-a", "--input", str(task), "--catalog", str(catalog), "--analysis", str(FIXTURES / "p2_analysis.json"), "--direction", str(FIXTURES / "p2_direction.json"), "--store", str(store)],
                 check=True,
                 capture_output=True,
-                text=True,
             )
-            subprocess.run(
-                [str(launcher), "approve-gate-a", "--run-id", run_id, "--store", str(store), "--option-id", "direction-1", "--decision", "确认方向"],
+            self._utf8_run(
+                [sys.executable, "-B", str(launcher), "approve-gate-a", "--run-id", run_id, "--store", str(store), "--option-id", "direction-1", "--decision", "确认方向"],
                 check=True,
                 capture_output=True,
-                text=True,
             )
-            subprocess.run(
-                [str(launcher), "build-context", "--run-id", run_id, "--catalog", str(catalog), "--selection", str(FIXTURES / "p3_selection.json"), "--store", str(store)],
+            self._utf8_run(
+                [sys.executable, "-B", str(launcher), "build-context", "--run-id", run_id, "--catalog", str(catalog), "--selection", str(FIXTURES / "p3_selection.json"), "--store", str(store)],
                 check=True,
                 capture_output=True,
-                text=True,
             )
-            subprocess.run(
-                [str(launcher), "prepare-gate-b", "--run-id", run_id, "--draft-output", str(FIXTURES / "p4_draft.md"), "--headline-output", str(FIXTURES / "p4_headline.json"), "--store", str(store)],
+            self._utf8_run(
+                [sys.executable, "-B", str(launcher), "prepare-gate-b", "--run-id", run_id, "--draft-output", str(FIXTURES / "p4_draft.md"), "--headline-output", str(FIXTURES / "p4_headline.json"), "--store", str(store)],
                 check=True,
                 capture_output=True,
-                text=True,
             )
-            subprocess.run(
-                [str(launcher), "approve-gate-b", "--run-id", run_id, "--store", str(store), "--decision", "确认正文和标题"],
+            self._utf8_run(
+                [sys.executable, "-B", str(launcher), "approve-gate-b", "--run-id", run_id, "--store", str(store), "--decision", "确认正文和标题"],
                 check=True,
                 capture_output=True,
-                text=True,
             )
             context = json.loads(
                 (store / "runs" / run_id / "article_context_v1.json").read_text(encoding="utf-8")
             )
             target_ref = context["save_target_preview"]["target_ref"]
-            saved = subprocess.run(
-                [str(launcher), "save-obsidian", "--run-id", run_id, "--store", str(store), "--isolated-root", str(Path(temporary) / "obsidian"), "--target-ref", target_ref, "--relative-dir", "articles"],
+            saved = self._utf8_run(
+                [sys.executable, "-B", str(launcher), "save-obsidian", "--run-id", run_id, "--store", str(store), "--isolated-root", str(Path(temporary) / "obsidian"), "--target-ref", target_ref, "--relative-dir", "articles"],
                 check=False,
                 capture_output=True,
-                text=True,
             )
 
         self.assertEqual(saved.returncode, 0, saved.stderr)

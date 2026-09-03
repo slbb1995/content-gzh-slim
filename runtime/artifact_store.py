@@ -56,8 +56,8 @@ class ArtifactStore:
             if _canonical(existing) != _canonical(value):
                 raise ArtifactStoreError(f"artifact already exists with different content: {name}")
             return
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(payload)
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(payload.encode("utf-8"))
 
     def write_text_once_or_verify(self, run_id: str, name: str, value: str) -> None:
         path = self._path(run_id, name)
@@ -68,8 +68,8 @@ class ArtifactStore:
             if self.read_text(run_id, name) != payload:
                 raise ArtifactStoreError(f"artifact already exists with different content: {name}")
             return
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(payload)
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(payload.encode("utf-8"))
 
     def replace_json_if_matches(
         self,
@@ -85,13 +85,12 @@ class ArtifactStore:
         if _canonical(existing) != _canonical(expected):
             raise ArtifactStoreError(f"artifact changed unexpectedly; refusing to replace: {name}")
         with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
+            mode="wb",
             dir=path.parent,
             prefix=f".{name}-",
             suffix=".tmp",
             delete=False,
         ) as handle:
-            handle.write(_canonical(replacement) + "\n")
+            handle.write((_canonical(replacement) + "\n").encode("utf-8"))
             temporary = Path(handle.name)
         os.replace(temporary, path)
