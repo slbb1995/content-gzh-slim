@@ -1,6 +1,6 @@
 # Content GZH Slim
 
-`content-gzh-slim` 是一套可独立安装、面向多知识库和多 IP 的微信公众号内容工作流。
+`content-gzh-slim` 是一套可独立安装、面向多知识库和多 IP 的微信公众号内容工作流。1.1.0 起同一发布 ZIP 同时支持 Codex / WorkBuddy 与 Windows / macOS。
 
 当前版本在 P8 已验收主链上增加 `content-source-v1`：可从明确输入或经过真人确认的公共 Registry 解析 Obsidian/飞书知识库，选择同库任意 active IP，并在 Gate A 后冻结、回读和校验所有来源。ZSK、口播和公众号仍是三个独立产品，不存在运行时代码依赖。
 
@@ -55,6 +55,21 @@ python3 tools/verify.py
 python3 install.py --activate
 ```
 
+从通用 ZIP 安装时，Codex 使用默认宿主；WorkBuddy 使用显式宿主：
+
+```bash
+python3 install.py --host codex --activate
+python3 install.py --host workbuddy --activate
+```
+
+Windows 将 `python3` 换成 `py -X utf8 -B`。也可以直接在 WorkBuddy 技能页面上传通用 ZIP；ZIP 根目录包含 WorkBuddy 所需的 `SKILL.md`，同时保留 Codex 的六 Skill、Runtime、Schema 和安装器。首次绑定与 Run 数据分别保存在宿主自己的隐藏目录；不得自动复制另一宿主的 Registry、凭据或客户资料。
+
+通用包由干净 Git 工作树构建，并把源码提交写入包清单：
+
+```bash
+python3 tools/build_universal_package.py --output dist/content-gzh-slim-universal.zip
+```
+
 验证失败就停止。安装器不会覆盖不同内容的现有包或同名 active Skill；更新前先比较并备份。
 
 首次手动配置一个兼容知识库：
@@ -72,7 +87,7 @@ python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识
 
 ## 仓库状态
 
-- Version：1.0.0
+- Version：1.1.0
 - Implementation：P8 主链 + `content-source-v1`
 - Skills：1 个公开入口 + 5 个内部 Skill
 - Human Gates：2

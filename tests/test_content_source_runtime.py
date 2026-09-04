@@ -5,9 +5,12 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 from runtime.content_source import (
     ContentSourceError,
+    LarkContentSourceClient,
+    _feishu_documents,
     apply_configuration,
     plan_configuration,
     resolve_real_source,
@@ -27,6 +30,24 @@ def canonical(value: dict) -> str:
 
 
 class ContentSourceRuntimeTests(unittest.TestCase):
+    def test_lark_client_drops_only_known_dead_local_proxy(self) -> None:
+        completed = mock.Mock(returncode=0, stdout='{"data": {}}', stderr='')
+        with mock.patch.dict(
+            "runtime.content_source.os.environ",
+            {
+                "ALL_PROXY": "http://127.0.0.1:9",
+                "HTTPS_PROXY": "http://localhost:9",
+                "HTTP_PROXY": "http://proxy.example:8080",
+            },
+            clear=True,
+        ), mock.patch("runtime.content_source.subprocess.run", return_value=completed) as run:
+            LarkContentSourceClient(binary="lark-cli")._call(["wiki", "nodes", "list"])
+
+        environment = run.call_args.kwargs["env"]
+        self.assertNotIn("ALL_PROXY", environment)
+        self.assertNotIn("HTTPS_PROXY", environment)
+        self.assertEqual(environment["HTTP_PROXY"], "http://proxy.example:8080")
+
     def temporary_root(self):
         parent = Path("/private/tmp") if Path("/private/tmp").is_dir() else None
         return tempfile.TemporaryDirectory(prefix="content-gzh-source-", dir=parent)
@@ -51,10 +72,15 @@ class ContentSourceRuntimeTests(unittest.TestCase):
                 f"aliases: [\"{name}老师\"]\n"
                 "---\n\n"
                 f"# {name} Profile\n\n## 确认事实\n\n- {name}只讲可核验的业务事实。\n- {name}面向企业负责人。\n- {name}不承诺未经验证的结果。\n"
+                f"\n## 表达方式\n\n- {name}说话亲切、明确、不端着。\n"
+                f"\n## 专业判断\n\n- {name}认为流程断点比工具参数更值得优先检查。\n"
+                f"\n## 读者连接\n\n- {name}理解负责人买了工具却看不到结果的焦虑。\n"
+                f"\n## 业务边界\n\n- {name}不会把未经核验的结果写成承诺。\n"
             )
             path = vault / "05-IP-Profile" / f"{name}.md"
-            path.write_text(text, encoding="utf-8")
-            profiles.append({"profile_id": profile_id, "display_name": name, "aliases": [f"{name}老师"], "object_ref": path.relative_to(vault).as_posix(), "status": "active", "is_primary": primary, "content_sha256": hashlib.sha256(text.encode()).hexdigest()})
+            payload = text.encode("utf-8")
+            path.write_bytes(payload)
+            profiles.append({"profile_id": profile_id, "display_name": name, "aliases": [f"{name}老师"], "object_ref": path.relative_to(vault).as_posix(), "status": "active", "is_primary": primary, "content_sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
         (vault / "03-业务知识库" / "业务.md").write_text(
             "---\nasset_id: KNO-1\ntype: business_knowledge_asset\nstatus: confirmed\nkeywords:\n  - 企业服务\napplicable_workflows:\n  - content-gzh-slim\n---\n\n# 企业服务事实\n\n已确认先做需求诊断。\n",
             encoding="utf-8",
@@ -104,7 +130,58 @@ class ContentSourceRuntimeTests(unittest.TestCase):
             self.assertEqual(len(entry["profiles"]), 1)
             self.assertEqual(len(entry["business_assets"]), 1)
             self.assertEqual(len(entry["content_method_assets"]), 1)
+            profile = entry["profiles"][0]
+            fragment_types = {item["fragment_type"] for item in profile["confirmed_fragments"]}
+            self.assertIn("identity_fact", fragment_types)
+            self.assertIn("expression_style", fragment_types)
+            self.assertIn("professional_judgment", fragment_types)
+            self.assertIn("reader_empathy", fragment_types)
+            self.assertIn("business_boundary", fragment_types)
+            self.assertEqual(
+                profile["anchors"]["expression_style"],
+                "甲说话亲切、明确、不端着。",
+            )
             verify_source_snapshot(snapshot)
+
+    def test_feishu_content_root_recurses_two_levels_but_not_three(self) -> None:
+        class FakeClient:
+            tree = {
+                "root": [
+                    {"node_token": "folder-1", "has_child": True, "obj_type": "docx", "obj_token": "folder-doc", "title": "公众号对标"},
+                ],
+                "folder-1": [
+                    {"node_token": "article-1", "has_child": False, "obj_type": "docx", "obj_token": "article-doc", "title": "江景房判断方法"},
+                    {"node_token": "folder-2", "has_child": True, "obj_type": "docx", "obj_token": "folder-2-doc", "title": "更深目录"},
+                ],
+                "folder-2": [
+                    {"node_token": "too-deep", "has_child": False, "obj_type": "docx", "obj_token": "too-deep-doc", "title": "江景房深层文章"},
+                ],
+            }
+
+            def list_children(self, *, space_id, parent_node_token):
+                return self.tree.get(parent_node_token, [])
+
+            def fetch_markdown(self, token):
+                return f"# {token}\n\n内容"
+
+        documents = _feishu_documents(
+            FakeClient(), space_id="1", parent_ref="root", query="江景房", limit=5
+        )
+
+        self.assertEqual([item[0] for item in documents], ["article-doc"])
+
+    def test_ganhuo_guide_requires_persona_judgment_and_executable_verification(self) -> None:
+        guide = (
+            Path(__file__).parents[1]
+            / "skills"
+            / "content-gzh-writer"
+            / "references"
+            / "ganhuo.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("读者真实处境", guide)
+        self.assertIn("IP 的明确判断", guide)
+        self.assertIn("用户可执行的核验动作", guide)
+        self.assertIn("不要求每个自然段机械重复", guide)
 
     def test_explicit_second_ip_creates_distinct_identity(self) -> None:
         with self.temporary_root() as directory:
@@ -204,6 +281,10 @@ class ContentSourceRuntimeTests(unittest.TestCase):
                     "why_now": "流程不清会让工具投入失去方向。",
                     "writer_mode": "ganhuo",
                     "writer_mode_reason": "适合用步骤解释。",
+                    "voice_mode": "用甲的专业判断解释，不虚构个人经历。",
+                    "professional_judgments": ["先诊断，再给方案。"],
+                    "reader_situations": ["负责人面对流程不清的问题。"],
+                    "verification_actions": ["核对问题、责任人和下一步。"],
                     "structure": [{"section": "先诊断", "purpose": "确认真实问题。"}, {"section": "再行动", "purpose": "给出最小下一步。"}],
                     "selected_sources": {"business_refs": [business_ref], "peer_refs": [], "method_refs": [method_ref], "reference_refs": []},
                     "benchmark_transfer": [],

@@ -1,0 +1,53 @@
+{
+  "phase": "P9",
+  "status": "source_regression_build_install_and_readback_passed",
+  "date": "2026-09-04",
+  "authorization": "EXECUTE_PHASE: P9",
+  "scope": [
+    "separate_ganhuo_content_mode_from_voice_and_viewpoint",
+    "freeze_professional_judgments_reader_situations_and_verification_actions_at_gate_a",
+    "parse_profile_sections_semantically",
+    "apply_ganhuo_reader_judgment_explanation_verification_loop",
+    "traverse_feishu_04_two_levels_inside_manifest_root"
+  ],
+  "excluded_scope": [
+    "must_keep_contract_change",
+    "reviewer_or_gate_addition",
+    "customer_knowledge_base_mutation",
+    "tag_external_release_or_publish"
+  ],
+  "tdd": {
+    "red_commit": "ef73308",
+    "red_expected_failures": 8,
+    "green_commit": "6a99d7a",
+    "target_test_methods_passed": 5,
+    "full_tests_passed": 79,
+    "full_tests_failed": 0,
+    "coverage_status": "unavailable_optional_coverage_module_not_installed"
+  },
+  "verification": {
+    "git_diff_check": "pass",
+    "release_verifier": "pass_1_0_1_6_skills_70_deliverable_files",
+    "package": "content-gzh-slim-1.0.1",
+    "package_source_revision": "2abc24fef9774fcd2f10612087e3130cbc7bb190",
+    "activation_mode": "copy",
+    "probe": "ready",
+    "old_version_deleted_after_verified_install": true,
+    "release_candidate_claimed": true,
+    "installed": true,
+    "published": false
+  },
+  "loop": {
+    "decision": "writeback",
+    "writeback_targets": [
+      "CONTENT-GZH-SLIM-SPEC.md",
+      "runtime",
+      "schemas/article_context.schema.json",
+      "skills/content-gzh-analyzer",
+      "skills/content-gzh-context-retriever",
+      "skills/content-gzh-writer",
+      "tests"
+    ],
+    "next_run_reuse_key": "ganhuo_persona_viewpoint_and_bounded_feishu04_depth"
+  }
+}

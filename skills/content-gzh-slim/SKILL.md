@@ -19,9 +19,9 @@ Use this as the only public entry. It orchestrates one deterministic Run and del
 1. Run the bundled `probe` described in [references/runtime-commands.md](references/runtime-commands.md).
 2. Resolve exactly one binding from the explicit request or `~/.codex/.content-workflows/knowledge-base-registry.json`. Without Registry, accept an explicit compatible Obsidian path or Feishu space URL. Do not scan the computer.
 3. Use the real Obsidian or Feishu source adapter to read the Manifest, Profile index, then bounded 05→03→04 assets. FixtureAdapter is test-only.
-4. With an IP, read bounded 05 first, then up to 5 relevant 03 candidates, then up to 3 peer and 2 method candidates from 04. Without an IP, skip 05. Record counts and characters.
+4. With an IP, read bounded 05 first, then up to 5 relevant 03 candidates, then up to 3 peer and 2 method candidates from 04. A Feishu 04 root may be traversed at most two levels inside its Manifest-bound subtree; 03 remains direct-child only. Without an IP, skip 05. Record counts and characters.
 5. Prepare full snapshots for 0–5 explicit benchmarks. Never call an abstract or snippet a full article.
-6. Invoke `content-gzh-analyzer`, validate its deep analysis, prepare Gate A, show it, and stop.
+6. Invoke `content-gzh-analyzer`, validate its deep analysis, and prepare Gate A with a content mode plus an independent voice, professional judgment spine, reader situations, and executable verification actions; show it and stop.
 7. After the user selects an option when needed and replies exactly `确认方向`, record the approval and invoke `content-gzh-context-retriever` once. Runtime creates exactly one `article_context_v1.json`.
 8. Invoke `content-gzh-writer` with only that Context, then `content-gzh-headline` with the same Context and current draft. Show Gate B and stop.
 9. Before P3 and save, re-read Registry, Manifest, Profile index, selected source objects and explicit references. Any hash change stops while preserving artifacts. Only after Gate B save to the Manifest-derived target and verify readback.

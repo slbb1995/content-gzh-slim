@@ -1,0 +1,25 @@
+name: universal-package
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Universal package contract
+        run: python -B -m unittest tests.test_universal_package -v
+      - name: Full release verification
+        run: python -B tools/verify.py
+      - name: Build universal package
+        run: python -B tools/build_universal_package.py --output dist/content-gzh-slim-universal.zip

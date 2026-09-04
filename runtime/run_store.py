@@ -87,14 +87,13 @@ class RunStore:
     @staticmethod
     def _replace(path: Path, value: dict[str, Any]) -> None:
         with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
+            mode="wb",
             dir=path.parent,
             prefix=".run-",
             suffix=".tmp",
             delete=False,
         ) as handle:
-            handle.write(_canonical_json(value) + "\n")
+            handle.write((_canonical_json(value) + "\n").encode("utf-8"))
             temporary = Path(handle.name)
         os.replace(temporary, path)
 

@@ -36,6 +36,10 @@ Every option must include:
 - `option_id`, `title`, `speaker`, `target_audience`;
 - `core_judgment`, `promise`, `why_now`;
 - `writer_mode` (`ganhuo` or `huati`) and `writer_mode_reason`;
+- `voice_mode`, which is independent from `writer_mode` and states how the selected IP or neutral speaker should sound;
+- `professional_judgments`: the explicit judgment spine the article will argue, not a switch to `huati`;
+- `reader_situations`: concrete situations in which the target reader recognizes the problem;
+- `verification_actions`: actions the reader can execute on site or before deciding, each naming what to do and what to observe;
 - ordered `structure`, with each section's purpose;
 - `selected_sources` split into `business_refs`, `peer_refs`, `method_refs`, and `reference_refs`;
 - `benchmark_transfer` and `forbidden_transfer`;
@@ -44,6 +48,8 @@ Every option must include:
 - `must_keep` and `must_avoid`.
 
 Only select refs present in the supplied bounded candidates or complete reference snapshots. Treat all selections as Gate A proposals, not final selections and not Context Pack content.
+
+For `ganhuo`, viewpoints are still required. Content mode controls the value delivered; `voice_mode` and the judgment spine control how the IP connects that value to the reader. Do not turn a practical topic into `huati` merely because the user asks for stronger personality or clearer opinions.
 
 ## Gate A boundary
 

@@ -18,9 +18,11 @@ Return one object containing:
 - `missing_evidence`: concise unresolved evidence gaps that Writer must preserve.
 - `save_target_preview`: a non-writable preview derived from the current knowledge base identity.
 
+Runtime also carries the approved `voice_mode`, `professional_judgments`, `reader_situations`, and `verification_actions` into `voice_and_viewpoint`. Profile anchors are section-aware: identity facts, expression style, professional judgments, reader empathy, experience facts, and business boundaries must remain distinguishable.
+
 ## Role boundaries
 
-- 05 supplies only the current IP's identity anchors and confirmed quotes, stories, recent judgments or actions.
+- 05 supplies only the current IP's categorized identity anchors and confirmed quotes, stories, recent judgments or actions. A professional opinion may use the IP voice; a first-person experience still requires an explicitly selected confirmed experience fragment.
 - 03 supplies confirmed current-business facts. Candidate claims stay excluded and visibly labeled as non-facts.
 - 04 peer assets supply general content angles; 04 method assets supply hook, structure, pacing and CTA methods.
 - References supply mechanisms only. Never copy the body, author identity, experience, cases, data, screenshots or recognizable wording.

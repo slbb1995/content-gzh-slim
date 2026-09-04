@@ -19,6 +19,7 @@ CONTEXT_ROOT_FIELDS = {
     "task_input",
     "approved_direction",
     "writer_mode",
+    "voice_and_viewpoint",
     "selected_05_profile_context",
     "selected_03_business_context",
     "selected_04_content_assets",
@@ -83,6 +84,29 @@ def build_article_context(
         "task_input": task,
         "approved_direction": option,
         "writer_mode": option["writer_mode"],
+        "voice_and_viewpoint": {
+            "voice_mode": option["voice_mode"],
+            "professional_judgments": option["professional_judgments"],
+            "reader_situations": option["reader_situations"],
+            "verification_actions": option["verification_actions"],
+            "profile_anchors": {
+                key: value
+                for key, value in projection["selected_05_profile_context"].get(
+                    "core_anchors", {}
+                ).items()
+                if key
+                in {
+                    "expression_style",
+                    "professional_judgments",
+                    "reader_empathy",
+                    "business_boundary",
+                }
+            },
+            "opinion_policy": (
+                "Professional judgments may use the IP voice; first-person experiences require an explicitly "
+                "selected confirmed fragment."
+            ),
+        },
         "selected_05_profile_context": projection["selected_05_profile_context"],
         "selected_03_business_context": projection["selected_03_business_context"],
         "selected_04_content_assets": projection["selected_04_content_assets"],

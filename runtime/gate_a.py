@@ -18,6 +18,7 @@ _TEXT_FIELDS = {
     "promise",
     "why_now",
     "writer_mode_reason",
+    "voice_mode",
     "business_connection",
 }
 
@@ -30,6 +31,9 @@ _LIST_FIELDS = {
     "first_person_claims",
     "must_keep",
     "must_avoid",
+    "professional_judgments",
+    "reader_situations",
+    "verification_actions",
 }
 
 
@@ -101,6 +105,9 @@ def build_direction(
                 raise DirectionContractError(
                     f"direction option {field} must contain only non-empty strings"
                 )
+        for field in ("professional_judgments", "reader_situations", "verification_actions"):
+            if not option[field]:
+                raise DirectionContractError(f"direction option {field} must not be empty")
         if not option["structure"] or not all(
             isinstance(section, dict)
             and _nonempty_text(section.get("section"))
@@ -180,6 +187,10 @@ def render_gate_a(direction: dict[str, Any]) -> str:
                 f"- 核心承诺：{option['promise']}",
                 f"- 为什么现在值得写：{option['why_now']}",
                 f"- 类型：{option['writer_mode']}；{option['writer_mode_reason']}",
+                f"- 表达方式：{option['voice_mode']}",
+                "- 专业判断：" + "；".join(option["professional_judgments"]),
+                "- 读者处境：" + "；".join(option["reader_situations"]),
+                "- 可执行核验：" + "；".join(option["verification_actions"]),
                 "- 结构：",
             ]
         )

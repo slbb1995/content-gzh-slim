@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 
@@ -83,6 +84,28 @@ def _manifest(root: Path, revision: str) -> dict:
     }
 
 
+def _same_tree(left: Path, right: Path) -> bool:
+    if not left.is_dir() or not right.is_dir() or left.is_symlink() or right.is_symlink():
+        return False
+    left_files = {path.relative_to(left).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in left.rglob("*") if path.is_file()}
+    right_files = {path.relative_to(right).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest() for path in right.rglob("*") if path.is_file()}
+    return left_files == right_files
+
+
+def _can_symlink(parent: Path, target: Path) -> bool:
+    if os.name != "nt":
+        return True
+    probe = parent / f".content-gzh-link-probe-{uuid.uuid4().hex}"
+    try:
+        probe.symlink_to(target, target_is_directory=True)
+        return probe.is_symlink() and probe.resolve() == target.resolve()
+    except OSError:
+        return False
+    finally:
+        if probe.is_symlink() or probe.exists():
+            probe.unlink(missing_ok=True)
+
+
 def _install(candidate: Path, project: Path) -> Path:
     project = project.expanduser().resolve()
     if not (project / ".git").is_dir():
@@ -92,11 +115,20 @@ def _install(candidate: Path, project: Path) -> Path:
     link = agents / "skills"
     expected = candidate / ".agents" / "skills"
     if link.exists() or link.is_symlink():
-        if not link.is_symlink() or link.resolve() != expected.resolve():
+        if not ((link.is_symlink() and link.resolve() == expected.resolve()) or _same_tree(link, expected)):
             raise ValueError("project .agents/skills already exists with another target")
         return link
-    relative = os.path.relpath(expected, agents)
-    link.symlink_to(relative, target_is_directory=True)
+    if _can_symlink(agents, expected):
+        relative = os.path.relpath(expected, agents)
+        link.symlink_to(relative, target_is_directory=True)
+    else:
+        staging = agents / f".content-gzh-skills-{uuid.uuid4().hex}"
+        try:
+            _copy_tree(expected, staging)
+            os.replace(staging, link)
+        finally:
+            if staging.exists() or staging.is_symlink():
+                shutil.rmtree(staging, ignore_errors=True)
     return link
 
 

@@ -12,4 +12,4 @@ Use the frozen `writer_mode` and load exactly one matching mode guide:
 - `ganhuo`: read [references/ganhuo.md](references/ganhuo.md).
 - `huati`: read [references/huati.md](references/huati.md).
 
-Follow `must_keep`, `must_avoid`, approved facts, missing evidence, IP status, and forbidden reference transfers. Return only the complete article body. Do not include a title, analysis, status, source list, save note, tags, or distribution copy. Do not call a Reviewer, AI-flavor check, or automatic polishing pass.
+Treat `writer_mode` and `voice_and_viewpoint` as independent contracts: the first controls the content value, while the second carries the IP's approved voice, judgment spine, reader situations, and executable verification actions. Follow `must_keep`, `must_avoid`, approved facts, missing evidence, IP status, and forbidden reference transfers. Return only the complete article body. Do not include a title, analysis, status, source list, save note, tags, or distribution copy. Do not call a Reviewer, AI-flavor check, or automatic polishing pass.

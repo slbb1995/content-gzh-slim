@@ -80,11 +80,42 @@ class P3RuntimeTests(unittest.TestCase):
 
         self.assertEqual(set(context), CONTEXT_ROOT_FIELDS)
         self.assertEqual(context["writer_mode"], "ganhuo")
+        self.assertEqual(
+            context["voice_and_viewpoint"]["voice_mode"],
+            "以示例甲的专业判断为主线，亲切、明确、不端着，不虚构个人经历。",
+        )
+        self.assertEqual(len(context["voice_and_viewpoint"]["professional_judgments"]), 2)
+        self.assertEqual(len(context["voice_and_viewpoint"]["reader_situations"]), 1)
+        self.assertEqual(len(context["voice_and_viewpoint"]["verification_actions"]), 1)
         self.assertLessEqual(len(context["selected_05_profile_context"]["confirmed_fragments"]), 3)
         self.assertLessEqual(len(context["selected_03_business_context"]), 5)
         self.assertLessEqual(len(context["selected_04_content_assets"]), 3)
         self.assertLessEqual(len(context["selected_04_method_assets"]), 2)
         self.assertEqual(context["ip_identity_and_status"]["requested_name"], "示例甲")
+
+    def test_gate_a_rejects_direction_without_viewpoint_spine(self) -> None:
+        direction = read_json("p2_direction.json")
+        for field in (
+            "voice_mode",
+            "professional_judgments",
+            "reader_situations",
+            "verification_actions",
+        ):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
+                changed = copy.deepcopy(direction)
+                changed["options"][0].pop(field)
+                path = Path(temporary) / "direction.json"
+                path.write_text(json.dumps(changed, ensure_ascii=False), encoding="utf-8")
+                task = validate_task_input(read_json("p2_task.json"))
+                knowledge_base, ip = FixtureAdapter(CATALOG).resolve(
+                    task["knowledge_base"], task["ip"]
+                )
+                store = RunStore(temporary)
+                run = store.create_or_resume(task, knowledge_base, ip).run
+                with self.assertRaises(Exception):
+                    P2Pipeline(temporary, CATALOG).run(
+                        run["run_id"], FIXTURES / "p2_analysis.json", path
+                    )
 
     def test_receipt_marks_final_selection_but_stays_operational_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -19,6 +19,20 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _run_utf8(arguments: list[str], *, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    """Run a bundled Python entrypoint with deterministic output decoding."""
+    return subprocess.run(
+        arguments,
+        cwd=ROOT,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="strict",
+    )
+
+
 def main() -> int:
     manifest = json.loads((ROOT / "release-manifest.json").read_text(encoding="utf-8"))
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
@@ -45,13 +59,13 @@ def main() -> int:
         raise RuntimeError(f"generated Python files found: {forbidden}")
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
-    tests = subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests"], cwd=ROOT, env=env, capture_output=True, text=True)
+    tests = _run_utf8([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests"], env=env)
     if tests.returncode != 0:
         raise RuntimeError("tests failed:\n" + tests.stdout + tests.stderr)
-    cli = subprocess.run([sys.executable, "-B", str(ROOT / "scripts" / "content-gzh-slim"), "--help"], cwd=ROOT, env=env, capture_output=True, text=True)
+    cli = _run_utf8([sys.executable, "-B", str(ROOT / "scripts" / "content-gzh-slim"), "--help"], env=env)
     if cli.returncode != 0 or "content-gzh-slim installed-host runtime" not in cli.stdout:
         raise RuntimeError("CLI smoke test failed")
-    print(f"PASS: Content 公众号 Slim {version}, 6 skills / {len(files)} deliverable files verified.")
+    print(f"PASS: Content GZH Slim {version}, 6 skills / {len(files)} deliverable files verified.")
     return 0
 
 

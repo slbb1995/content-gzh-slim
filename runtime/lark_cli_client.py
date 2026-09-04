@@ -92,14 +92,13 @@ class LarkCliFeishuClient:
     def _write_state(self, value: dict[str, Any]) -> None:
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
+            mode="wb",
             dir=self.state_path.parent,
             prefix=".feishu-state-",
             suffix=".tmp",
             delete=False,
         ) as handle:
-            handle.write(_canonical(value) + "\n")
+            handle.write((_canonical(value) + "\n").encode("utf-8"))
             temporary = Path(handle.name)
         os.chmod(temporary, 0o600)
         os.replace(temporary, self.state_path)

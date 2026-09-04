@@ -130,7 +130,11 @@ def _probe() -> dict[str, Any]:
         actual = hashlib.sha256(path.read_bytes()).hexdigest()
         if actual != expected:
             raise ValueError(f"package checksum mismatch: {relative}")
-    skill_root = root / ".agents" / "skills"
+    skill_root_value = manifest.get("skill_root", ".agents/skills")
+    skill_root_path = Path(skill_root_value)
+    if skill_root_path.is_absolute() or ".." in skill_root_path.parts:
+        raise ValueError("package manifest skill root is unsafe")
+    skill_root = root / skill_root_path
     names = sorted(path.parent.name for path in skill_root.glob("*/SKILL.md"))
     if names != sorted(manifest.get("skills", [])):
         raise ValueError("installed skill list differs from package manifest")

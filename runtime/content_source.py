@@ -32,6 +32,26 @@ class ContentSourceError(RuntimeError):
     """Raised when a real source cannot be resolved and frozen safely."""
 
 
+def _lark_cli_environment() -> dict[str, str]:
+    """Avoid inheriting the known dead local proxy while retaining valid proxies."""
+    environment = dict(os.environ)
+    for name in (
+        "ALL_PROXY", "HTTP_PROXY", "HTTPS_PROXY", "GIT_HTTP_PROXY", "GIT_HTTPS_PROXY",
+        "all_proxy", "http_proxy", "https_proxy", "git_http_proxy", "git_https_proxy",
+    ):
+        value = environment.get(name)
+        if not value:
+            continue
+        try:
+            parsed = urlsplit(value)
+            is_dead_proxy = parsed.hostname in {"127.0.0.1", "localhost", "::1"} and parsed.port == 9
+        except ValueError:
+            is_dead_proxy = False
+        if is_dead_proxy:
+            environment.pop(name, None)
+    return environment
+
+
 def default_registry_path() -> Path:
     configured = os.environ.get("CODEX_HOME")
     root = Path(configured).expanduser() if configured else Path.home() / ".codex"
@@ -230,6 +250,7 @@ class LarkContentSourceClient:
             check=False,
             capture_output=True,
             text=True,
+            env=_lark_cli_environment(),
         )
         if completed.returncode != 0:
             raise ContentSourceError(f"lark-cli read failed: {(completed.stderr or completed.stdout).strip()}")
@@ -349,26 +370,68 @@ def _keywords(metadata: dict[str, Any], title: str) -> list[str]:
 
 def _profile_payload(profile: dict[str, Any], text: str, ref: str) -> dict[str, Any]:
     _metadata, body = _split_frontmatter(text)
-    bullets = [match.group(1).strip() for line in body.splitlines() if (match := re.fullmatch(r"\s*-\s+(.+?)\s*", line))]
-    confirmed = bullets[:8]
+    section_type = "identity_fact"
+    typed_fragments: list[tuple[str, str]] = []
+    section_aliases = (
+        (("表达方式", "表达风格", "语言风格", "说话方式"), "expression_style"),
+        (("专业判断", "核心观点", "稳定判断", "价值判断"), "professional_judgment"),
+        (("读者连接", "读者理解", "用户理解", "客户理解"), "reader_empathy"),
+        (("业务边界", "表达边界", "事实边界", "承诺边界", "禁区"), "business_boundary"),
+        (("真实经历", "确认经历", "个人经历"), "experience_fact"),
+        (("确认事实", "身份", "定位", "基本信息"), "identity_fact"),
+    )
+    per_type_counts: dict[str, int] = {}
+    for line in body.splitlines():
+        heading = re.fullmatch(r"\s*#{2,6}\s+(.+?)\s*", line)
+        if heading:
+            title = heading.group(1).strip()
+            section_type = next(
+                (
+                    fragment_type
+                    for aliases, fragment_type in section_aliases
+                    if any(alias in title for alias in aliases)
+                ),
+                "identity_fact",
+            )
+            continue
+        bullet = re.fullmatch(r"\s*-\s+(.+?)\s*", line)
+        if not bullet:
+            continue
+        if per_type_counts.get(section_type, 0) >= 4 or len(typed_fragments) >= 20:
+            continue
+        typed_fragments.append((section_type, bullet.group(1).strip()))
+        per_type_counts[section_type] = per_type_counts.get(section_type, 0) + 1
+
+    grouped: dict[str, list[str]] = {}
+    for fragment_type, value in typed_fragments:
+        grouped.setdefault(fragment_type, []).append(value)
+
+    def joined(fragment_type: str, fallback: str = "") -> str:
+        values = grouped.get(fragment_type, [])
+        return "；".join(values) if values else fallback
+
     anchors = {
         "identity": profile["display_name"],
-        "confirmed_profile": "；".join(confirmed[:4]) if confirmed else "仅确认名称，暂无可靠个人事实",
-        "style_boundary": "；".join(confirmed[4:6]) if len(confirmed) > 4 else "不得补造个人经历、案例或结果",
+        "confirmed_profile": joined("identity_fact", "仅确认名称，暂无可靠个人事实"),
+        "expression_style": joined("expression_style"),
+        "professional_judgments": joined("professional_judgment"),
+        "reader_empathy": joined("reader_empathy"),
+        "business_boundary": joined("business_boundary", "不得补造个人经历、案例或结果"),
+        "style_boundary": joined("business_boundary", "不得补造个人经历、案例或结果"),
     }
     fragments = [
         {
             "fragment_id": hashlib.sha256(f"{profile['profile_id']}\n{index}\n{text_value}".encode()).hexdigest()[:16],
-            "fragment_type": "confirmed_profile_fragment",
+            "fragment_type": fragment_type,
             "text": text_value,
             "status": "confirmed",
         }
-        for index, text_value in enumerate(confirmed, 1)
+        for index, (fragment_type, text_value) in enumerate(typed_fragments, 1)
     ]
     return {
         "name": profile["display_name"],
         "ref": ref,
-        "status": "full" if len(confirmed) >= 3 else "limited",
+        "status": "full" if len(typed_fragments) >= 3 else "limited",
         "anchors": anchors,
         "confirmed_fragments": fragments,
     }
@@ -474,16 +537,26 @@ def _space_id(locator: str) -> str:
     raise ContentSourceError("Feishu locator must be a stable wiki space URL")
 
 
-def _feishu_documents(client: LarkContentSourceClient, *, space_id: str, parent_ref: str, query: str, limit: int) -> list[tuple[str, str, str]]:
+def _feishu_documents(client: LarkContentSourceClient, *, space_id: str, parent_ref: str, query: str, limit: int, max_depth: int = 2) -> list[tuple[str, str, str]]:
     documents = []
     nodes = []
-    for node in client.list_children(space_id=space_id, parent_node_token=parent_ref):
-        if node.get("obj_type") != "docx" or not isinstance(node.get("obj_token"), str):
-            continue
-        title = str(node.get("title") or "")
-        score = _search_score(title, [title], query)
-        if score:
-            nodes.append((score, title, node))
+    pending = [(parent_ref, 0)]
+    visited = {parent_ref}
+    while pending:
+        current_ref, current_depth = pending.pop(0)
+        for node in client.list_children(space_id=space_id, parent_node_token=current_ref):
+            node_depth = current_depth + 1
+            has_child = node.get("has_child") is True
+            node_ref = node.get("node_token")
+            if has_child and node_depth < max_depth and isinstance(node_ref, str) and node_ref not in visited:
+                visited.add(node_ref)
+                pending.append((node_ref, node_depth))
+            if has_child or node.get("obj_type") != "docx" or not isinstance(node.get("obj_token"), str):
+                continue
+            title = str(node.get("title") or "")
+            score = _search_score(title, [title], query)
+            if score:
+                nodes.append((score, title, node))
     nodes.sort(key=lambda item: (-item[0], item[1]))
     for _score, _title_value, node in nodes[:limit]:
         token = node["obj_token"]
@@ -661,8 +734,8 @@ def resolve_real_source(
         documents_03 = _obsidian_documents(vault, manifest["asset_roots"]["knowledge"], query=query, limit=5)
         documents_04 = _obsidian_documents(vault, manifest["asset_roots"]["content"], query=query, limit=5)
     else:
-        documents_03 = _feishu_documents(client, space_id=space_id, parent_ref=manifest["asset_roots"]["knowledge"], query=query, limit=5)
-        documents_04 = _feishu_documents(client, space_id=space_id, parent_ref=manifest["asset_roots"]["content"], query=query, limit=5)
+        documents_03 = _feishu_documents(client, space_id=space_id, parent_ref=manifest["asset_roots"]["knowledge"], query=query, limit=5, max_depth=1)
+        documents_04 = _feishu_documents(client, space_id=space_id, parent_ref=manifest["asset_roots"]["content"], query=query, limit=5, max_depth=2)
     business, _unused_peer, _unused_method, objects_03 = _asset_catalog(documents_03, backend=backend, role="03")
     _unused_business, peer, methods, objects_04 = _asset_catalog(documents_04, backend=backend, role="04")
 
