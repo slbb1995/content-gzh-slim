@@ -13,3 +13,5 @@ Use the frozen `writer_mode` and load exactly one matching mode guide:
 - `huati`: read [references/huati.md](references/huati.md).
 
 Follow `must_keep`, `must_avoid`, approved facts, missing evidence, IP status, and forbidden reference transfers. Return only the complete article body. Do not include a title, analysis, status, source list, save note, tags, or distribution copy. Do not call a Reviewer, AI-flavor check, or automatic polishing pass.
+
+Treat source availability, missing evidence, fact boundaries, candidate status, knowledge-base state, save previews, and writing instructions as private production controls. They must shape what is omitted, qualified, or supported, but they must not be quoted or paraphrased to the reader. Never explain that the article is avoiding customer stories, using only stored materials, lacking a case, following a writing requirement, or substituting one source type for another. Write the supported judgment directly. `must_keep` is reserved for reader-visible exact content; if it contains an apparent private production control, stop instead of exposing it.

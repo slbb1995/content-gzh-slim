@@ -43,6 +43,8 @@ Every option must include:
 - `first_person_claims`, which must be empty for `limited`, `unused`, or `none` IP unless an explicitly confirmed supplied fragment supports it;
 - `must_keep` and `must_avoid`.
 
+`must_keep` contains only reader-visible exact content that is intended to appear verbatim in the article. Never place private production controls there, including source-availability notes, knowledge-base status, instructions not to invent a case, or explanations of how the article should be written. Keep those controls in `fact_boundaries`, `forbidden_transfer`, or `must_avoid`; they constrain generation silently and are not article copy.
+
 Only select refs present in the supplied bounded candidates or complete reference snapshots. Treat all selections as Gate A proposals, not final selections and not Context Pack content.
 
 ## Gate A boundary

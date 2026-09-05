@@ -12,6 +12,24 @@ _FORBIDDEN_SECTION_MARKER = re.compile(
     r"(?m)^(?:分析|状态|来源清单|保存说明|推荐标题|Top 3)\s*(?:[:：]|$)"
 )
 
+_INTERNAL_EDITORIAL_NARRATION = (
+    re.compile(
+        r"(?:这里|本文|这篇文章|下文)[^。！？\n]{0,16}"
+        r"(?:不讲|不写|不采用|只看|只用|只使用|仅看|仅使用)[^。！？\n]{0,32}"
+        r"(?:客户故事|客户案例|入库资料|项目资料|知识库素材|素材说明)"
+    ),
+    re.compile(
+        r"(?:最后|文末)[^。！？\n]{0,30}(?:写作要求|素材说明|事实边界|素材边界)"
+        r"[^。！？\n]{0,16}(?:说清楚|说明|交代|展示)"
+    ),
+    re.compile(
+        r"(?:因为|由于)[^。！？\n]{0,36}(?:知识库没有|资料中没有|缺少可核验)"
+        r"[^。！？\n]{0,20}(?:客户故事|客户案例|案例)[^。！？\n]{0,24}"
+        r"(?:所以|因此)[^。！？\n]{0,20}(?:本文|这篇文章)[^。！？\n]{0,20}"
+        r"(?:改用|只用|只写)"
+    ),
+)
+
 
 class DraftContractError(ValueError):
     """Raised when P4 identity or article-body boundaries are violated."""
@@ -94,6 +112,8 @@ def validate_draft_body(body: Any, context: dict[str, Any]) -> str:
         raise DraftContractError("Writer output must not contain an article title")
     if _FORBIDDEN_SECTION_MARKER.search(normalized):
         raise DraftContractError("Writer output contains analysis, title, status, source, or save material")
+    if any(pattern.search(normalized) for pattern in _INTERNAL_EDITORIAL_NARRATION):
+        raise DraftContractError("Writer output exposes an internal production requirement")
 
     for required in context.get("must_keep", []):
         if required not in normalized:
