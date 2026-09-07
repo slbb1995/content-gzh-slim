@@ -15,6 +15,7 @@ from .content_source import (
     apply_configuration,
     default_runs_root,
     plan_configuration,
+    preview_real_source,
     resolve_real_source,
     verify_source_snapshot,
 )
@@ -68,6 +69,7 @@ def _start_or_resume(args: argparse.Namespace) -> tuple[dict[str, Any], Path, bo
         raw,
         registry_path=args.registry,
         lark_identity=args.identity,
+        retrieval_plan=_read_json(args.retrieval_plan) if args.retrieval_plan else None,
     )
     result = RunStore(store).create_or_resume(task, knowledge_base, ip)
     artifacts = ArtifactStore(store)
@@ -149,6 +151,15 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
 
     commands.add_parser("probe")
+    discover = commands.add_parser("discover-sources")
+    discover.add_argument("--input", required=True, type=Path)
+    discover.add_argument("--registry", type=Path)
+    discover.add_argument("--identity", choices=("user", "bot"), default="user")
+    preview_sources = commands.add_parser("preview-sources")
+    preview_sources.add_argument("--input", required=True, type=Path)
+    preview_sources.add_argument("--registry", type=Path)
+    preview_sources.add_argument("--identity", choices=("user", "bot"), default="user")
+    preview_sources.add_argument("--retrieval-plan", required=True, type=Path)
 
     configure = commands.add_parser("configure")
     configure.add_argument("--knowledge-base", required=True)
@@ -164,6 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--registry", type=Path)
     start.add_argument("--identity", choices=("user", "bot"), default="user")
     start.add_argument("--store", type=Path)
+    start.add_argument("--retrieval-plan", type=Path, help="internal semantic selection of discovered source objects")
 
     gate_a = commands.add_parser("prepare-gate-a")
     gate_a.add_argument("--input", required=True, type=Path)
@@ -173,6 +185,7 @@ def build_parser() -> argparse.ArgumentParser:
     gate_a.add_argument("--analysis", required=True, type=Path)
     gate_a.add_argument("--direction", required=True, type=Path)
     gate_a.add_argument("--store", type=Path)
+    gate_a.add_argument("--retrieval-plan", type=Path)
 
     approve_a = commands.add_parser("approve-gate-a")
     approve_a.add_argument("--run-id", required=True)
@@ -235,6 +248,10 @@ def main() -> int:
     try:
         if args.command == "probe":
             _emit(_probe())
+        elif args.command == "discover-sources":
+            _emit(resolve_real_source(_read_json(args.input), registry_path=args.registry, lark_identity=args.identity, discover_only=True))
+        elif args.command == "preview-sources":
+            _emit(preview_real_source(_read_json(args.input), registry_path=args.registry, lark_identity=args.identity, retrieval_plan=_read_json(args.retrieval_plan)))
         elif args.command == "configure":
             if args.confirmation:
                 _emit(

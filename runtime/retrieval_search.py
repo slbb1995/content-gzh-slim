@@ -37,6 +37,7 @@ class ControlledFixtureRetriever:
         limit: int,
         role: str,
         asset_type: str,
+        preselected: bool = False,
     ) -> list[dict[str, Any]]:
         if not isinstance(assets, list):
             raise RetrievalError(f"fixture {role} assets must be a list")
@@ -51,7 +52,7 @@ class ControlledFixtureRetriever:
                 for keyword in keywords
                 if isinstance(keyword, str) and keyword.casefold() in folded_query
             )
-            if score > 0:
+            if score > 0 or preselected:
                 ranked.append((score, str(asset.get("ref", "")), asset))
         ranked.sort(key=lambda item: (-item[0], item[1]))
 
@@ -74,6 +75,7 @@ class ControlledFixtureRetriever:
                     "score": score,
                     "snippet_count": 1,
                     "character_count": len(excerpt.strip()),
+                    "source_metadata": asset.get("source_metadata", {}),
                 }
             )
         return candidates
@@ -148,6 +150,7 @@ class ControlledFixtureRetriever:
             self.BUSINESS_LIMIT,
             "03",
             "business_asset",
+            knowledge_base.get("candidates_preselected", False),
         )
         access_log.append(
             {
@@ -155,7 +158,7 @@ class ControlledFixtureRetriever:
                 "role": "03",
                 "operation": "metadata_search_then_excerpt_read",
                 "candidate_count": len(business),
-                "full_document_count": 0,
+                "full_document_count": knowledge_base.get("source_read_counts", {}).get("03", 0),
             }
         )
 
@@ -165,6 +168,7 @@ class ControlledFixtureRetriever:
             self.PEER_LIMIT,
             "04",
             "peer_content_asset",
+            knowledge_base.get("candidates_preselected", False),
         )
         method = self._bounded_candidates(
             knowledge_base.get("content_method_assets", []),
@@ -172,6 +176,7 @@ class ControlledFixtureRetriever:
             self.METHOD_LIMIT,
             "04",
             "content_method_asset",
+            knowledge_base.get("candidates_preselected", False),
         )
         access_log.append(
             {
@@ -180,9 +185,14 @@ class ControlledFixtureRetriever:
                 "operation": "metadata_search_then_excerpt_read",
                 "peer_candidate_count": len(peer),
                 "method_candidate_count": len(method),
-                "full_document_count": 0,
+                "full_document_count": knowledge_base.get("source_read_counts", {}).get("04", len(peer) + len(method) if knowledge_base.get("candidates_preselected") else 0),
             }
         )
+        if not task_input.get("references"):
+            if not peer:
+                warnings.append("本次未找到可用的 04 同行内容；不能宣称已借鉴库内同行，需检查当前想法与业务资料是否足以展开。")
+            if not method:
+                warnings.append("本次未找到可用的 04 方法；不能宣称已使用库内结构，需说明自行组织的依据或补充资料。")
         return {
             "ip_anchor": ip_anchor,
             "ip_status": ip_status,

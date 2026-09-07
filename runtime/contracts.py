@@ -19,6 +19,7 @@ _ALLOWED_KEYS = {
     "must_avoid",
     "target_audience_override",
     "article_length_preference",
+    "writing_requirements",
 }
 
 _OPTIONAL_TEXT_KEYS = {
@@ -81,5 +82,9 @@ def validate_task_input(payload: Any) -> dict[str, Any]:
     }
     for key in _OPTIONAL_TEXT_KEYS:
         normalized[key] = _optional_text(payload.get(key), key)
+    if "writing_requirements" in payload:
+        requirements = _string_set(payload["writing_requirements"], "writing_requirements")
+        if set(requirements) & set(normalized["must_keep"]):
+            raise ContractError("editorial writing_requirements cannot also be must_keep article text")
+        normalized["writing_requirements"] = requirements
     return normalized
-

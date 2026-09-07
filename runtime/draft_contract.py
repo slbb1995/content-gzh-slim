@@ -101,6 +101,9 @@ def validate_draft_body(body: Any, context: dict[str, Any]) -> str:
     for forbidden in context.get("must_avoid", []):
         if forbidden in normalized:
             raise DraftContractError(f"draft contains must_avoid: {forbidden}")
+    for requirement in context.get("task_input", {}).get("writing_requirements", []):
+        if len(requirement) >= 8 and requirement in normalized:
+            raise DraftContractError("draft copied an internal writing requirement into article prose")
 
     boundaries = context.get("fact_and_candidate_boundaries", {})
     for candidate in boundaries.get("excluded_business_candidates", []):

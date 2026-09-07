@@ -27,6 +27,18 @@ For two or more references, also provide `multi_reference_synthesis` with:
 
 With no references, return an empty analysis list and `multi_reference_synthesis: null`; do not invent benchmark findings.
 
+## From one thought to a useful article
+
+Prioritize an explicit benchmark when supplied, but judge its fit to the client's purpose. With no benchmark, use supplied library peers for substantive value: topic motivation, general viewpoints, audience situations, reasoning and concrete detail roles. Use supplied methods to organize and strengthen that content. Neither a peer nor a method must be forced into a draft when irrelevant. Describe the selected material's specific contribution in `knowledge_materials`, and make each `structure` section explain how the argument develops and where supporting material belongs. Return one recommended direction when the thought is clear; structure comparisons belong in internal reasoning, not another customer questionnaire.
+
+Read `source_metadata` and the complete selected sections. Respect `applicable_workflows`, use/avoid conditions and explicit local usage boundaries. Experimental labels are context for judgment, not universal exclusion; explicit prohibitions still apply. An oral-only method is not an article method. A peer can supply general content value, but cannot supply the client's personal history, customer cases or proprietary facts. When the selected material cannot support the intended claim, state the missing evidence in `fact_boundaries` and explain the gap; do not call a source-free direction library-backed.
+
+In particular, retain and apply `audience_scope`, `usage_scope`, `maturity`, `source_verification` and `claim_scope`. Internal training or source-only material cannot silently become a public-facing client claim; unverified material stays unverified. Runtime rejects explicit prohibitions and preserves the remaining conditions for task-specific judgment.
+
+For 03, `status: active` describes an available asset, not proof of a current client fact. `local_original_hash_verified` verifies the source file's identity only. Material marked `reference_with_fact_check`, `requires_current_fact_check`, `source_only`, candidate or reference-only cannot be selected as a confirmed business fact; report the specific verification gap. Missing-field legacy compatibility does not authorize assuming that an old asset has been checked for this task.
+
+`writing_requirements` controls how to write. `must_keep` is only exact article content explicitly requested by the user; copy the frozen task's `must_keep` and `must_avoid` unchanged. Keep business viewpoints in `user_thoughts`; do not turn internal requests such as emphasizing professional judgment into literal draft sentences.
+
 ## Direction template
 
 Return `mode: single` with one complete option when the topic or user thoughts provide a direction. When both are insufficient, return `mode: options` with exactly three complete options.

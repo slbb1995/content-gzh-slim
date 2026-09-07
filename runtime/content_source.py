@@ -441,29 +441,122 @@ def _search_score(title: str, keywords: list[str], query: str) -> int:
     return score
 
 
-def _obsidian_documents(vault: Path, relative_root: str, *, query: str, limit: int) -> list[tuple[str, str, str]]:
+def _source_prohibited(metadata: dict[str, Any]) -> bool:
+    prohibited = {"archived", "rejected", "disabled", "deprecated", "blocked", "do_not_use", "forbidden"}
+    if metadata.get("do_not_use") is True:
+        return True
+    for key in ("status", "usage_policy", "usage_scope", "maturity", "source_verification", "claim_scope"):
+        value = metadata.get(key)
+        if isinstance(value, str) and value.strip().casefold() in prohibited:
+            return True
+        if isinstance(value, dict) and isinstance(value.get("status"), str) and value["status"].strip().casefold() in prohibited:
+            return True
+    return False
+
+
+def _source_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    keys = ("type", "status", "applicable_workflows", "method_kind", "content_purposes",
+            "use_when", "avoid_when", "usage_boundary", "usage_policy", "audience_scope",
+            "usage_scope", "maturity", "source_verification", "claim_scope", "fact_status", "do_not_use")
+    return {key: metadata[key] for key in keys if key in metadata}
+
+
+def _business_fact_status(metadata: dict[str, Any]) -> str:
+    """Source identity verification is not verification of current client facts."""
+    if metadata.get("status", "confirmed") not in {"active", "confirmed"}:
+        return "candidate"
+    # Keep missing-field legacy behavior, while honoring explicit stable metadata.
+    # Do not infer this from the article body or the words used in its title.
+    requires_check = {
+        "usage_scope": {"reference_with_fact_check", "reference_only", "internal_reference", "source_only", "candidate"},
+        "maturity": {"requires_current_fact_check", "experimental_reference", "reference_only", "candidate", "unverified"},
+        "source_verification": {"local_original_hash_verified", "original_hash_verified", "source_hash_verified", "hash_verified", "unverified", "not_verified", "source_only"},
+        "claim_scope": {"source_only", "source_claim_only", "reference_only", "not_client_fact", "candidate", "unverified"},
+    }
+    for key, restricted_values in requires_check.items():
+        value = metadata.get(key)
+        if isinstance(value, dict):
+            value = value.get("status")
+        values = value if isinstance(value, list) else [value]
+        if any(isinstance(item, str) and item.strip().casefold() in restricted_values for item in values):
+            return "candidate"
+    if "fact_status" in metadata and metadata["fact_status"] != "confirmed":
+        return "candidate"
+    return "confirmed"
+
+
+def _content_role(metadata: dict[str, Any]) -> str | None:
+    """Compatibility and scope, never a topic/genre classifier."""
+    if _source_prohibited(metadata):
+        return None
+    workflows = metadata.get("applicable_workflows", [])
+    if not isinstance(workflows, list) or (workflows and WORKFLOW not in workflows):
+        return None
+    if metadata.get("type") in {"benchmark_deconstruction", "peer_content_asset"}:
+        return "peer"
+    if metadata.get("type") == "content_method_asset" and WORKFLOW in workflows:
+        return "method"
+    return None
+
+
+def _obsidian_inventory(vault: Path, relative_root: str) -> list[dict[str, Any]]:
     root = _safe_obsidian_path(vault, relative_root)
     if not root.is_dir():
         raise ContentSourceError("Manifest asset root is not a directory")
-    ranked: list[tuple[int, str, Path]] = []
+    inventory = []
     for path in sorted(root.rglob("*.md")):
+        _safe_obsidian_path(vault, path.relative_to(vault).as_posix())
         if path.is_symlink() or not path.is_file():
             raise ContentSourceError("Obsidian source path is unsafe")
-        try:
-            with path.open("r", encoding="utf-8") as handle:
-                prefix = handle.read(32768)
-        except (OSError, UnicodeError) as exc:
-            raise ContentSourceError("Obsidian source metadata is unreadable") from exc
+        if len(inventory) >= 200:
+            raise ContentSourceError("source discovery exceeds 200 documents; narrow the configured asset root")
+        with path.open("r", encoding="utf-8") as handle:
+            prefix = handle.read(32768)
         metadata, body = _split_frontmatter(prefix)
-        title = _title(metadata, body, path.stem)
+        inventory.append({"object_ref": path.relative_to(vault).as_posix(),
+                          "title": _title(metadata, body, path.stem), "metadata": metadata,
+                          "sections": re.findall(r"^#{1,6}\s+(.+)$", body, re.MULTILINE)[:20],
+                          "preview": body[:500], "content_role": _content_role(metadata)})
+    return inventory
+
+
+def _obsidian_documents(vault: Path, relative_root: str, *, query: str, limit: int, content: bool = False, selected: list[str] | None = None) -> list[tuple[str, str, str]]:
+    root = _safe_obsidian_path(vault, relative_root)
+    if not root.is_dir():
+        raise ContentSourceError("Manifest asset root is not a directory")
+    ranked: list[tuple[int, str, Path, str | None]] = []
+    inventory = _obsidian_inventory(vault, relative_root)
+    if selected is not None and not set(selected).issubset({item["object_ref"] for item in inventory}):
+        raise ContentSourceError("retrieval plan selected an object outside the Manifest asset root")
+    for item in inventory:
+        metadata, title = item["metadata"], item["title"]
+        relative = item["object_ref"]
+        role = item["content_role"]
+        if _source_prohibited(metadata):
+            if selected and relative in selected:
+                raise ContentSourceError("selected source explicitly prohibits use")
+            continue
+        if content and role is None:
+            if selected and relative in selected:
+                raise ContentSourceError("selected 04 asset is incompatible or outside its permitted workflow/status")
+            continue
         score = _search_score(title, _keywords(metadata, title), query)
-        if score:
-            ranked.append((score, path.relative_to(vault).as_posix(), path))
+        if (selected is not None and relative in selected) or (selected is None and score):
+            ranked.append((score, relative, vault / relative, role))
     ranked.sort(key=lambda item: (-item[0], item[1]))
     documents = []
-    for _score, relative, path in ranked[:limit]:
+    counts = {"peer": 0, "method": 0}
+    for _score, relative, path, role in ranked:
+        if content and counts[role] >= {"peer": 3, "method": 2}[role]:
+            continue
+        if len(documents) >= limit:
+            break
         raw, digest = _read_regular(path)
         documents.append((relative, raw.decode("utf-8"), digest))
+        if content:
+            counts[role] += 1
+    if selected is not None and len(documents) != len(selected):
+        raise ContentSourceError("retrieval plan exceeds 03/04 role budgets")
     return documents
 
 
@@ -474,21 +567,65 @@ def _space_id(locator: str) -> str:
     raise ContentSourceError("Feishu locator must be a stable wiki space URL")
 
 
-def _feishu_documents(client: LarkContentSourceClient, *, space_id: str, parent_ref: str, query: str, limit: int) -> list[tuple[str, str, str]]:
+def _feishu_inventory(client: LarkContentSourceClient, *, space_id: str, parent_ref: str) -> list[dict[str, Any]]:
+    queue = [(parent_ref, 0)]
+    visited = set()
+    nodes = []
+    while queue:
+        parent, depth = queue.pop(0)
+        if parent in visited:
+            continue
+        visited.add(parent)
+        for node in client.list_children(space_id=space_id, parent_node_token=parent):
+            if len(nodes) >= 200:
+                raise ContentSourceError("Feishu discovery exceeds 200 nodes; narrow the configured root")
+            nodes.append(node)
+            if node.get("has_child"):
+                if depth >= 6 or not node.get("node_token"):
+                    raise ContentSourceError("Feishu discovery depth or child reference is invalid")
+                queue.append((node["node_token"], depth + 1))
+    return nodes
+
+
+def _feishu_documents(client: LarkContentSourceClient, *, space_id: str, parent_ref: str, query: str, limit: int, content: bool = False, selected: list[str] | None = None, read_stats: dict[str, int] | None = None) -> list[tuple[str, str, str]]:
     documents = []
     nodes = []
-    for node in client.list_children(space_id=space_id, parent_node_token=parent_ref):
+    seen_objects = set()
+    inventory = _feishu_inventory(client, space_id=space_id, parent_ref=parent_ref)
+    if selected is not None and not set(selected).issubset({node.get("obj_token") for node in inventory}):
+        raise ContentSourceError("retrieval plan selected an object outside the Manifest Feishu root")
+    for node in inventory:
         if node.get("obj_type") != "docx" or not isinstance(node.get("obj_token"), str):
             continue
+        if node["obj_token"] in seen_objects:
+            continue
+        seen_objects.add(node["obj_token"])
         title = str(node.get("title") or "")
         score = _search_score(title, [title], query)
-        if score:
+        if (selected is not None and node["obj_token"] in selected) or (selected is None and score):
             nodes.append((score, title, node))
     nodes.sort(key=lambda item: (-item[0], item[1]))
-    for _score, _title_value, node in nodes[:limit]:
+    counts = {"peer": 0, "method": 0}
+    for _score, _title_value, node in nodes:
+        if len(documents) >= limit:
+            break
         token = node["obj_token"]
         text = client.fetch_markdown(token)
+        if read_stats is not None:
+            read_stats["full_documents"] = read_stats.get("full_documents", 0) + 1
+        metadata = _split_frontmatter(text)[0]
+        if _source_prohibited(metadata):
+            if selected is not None:
+                raise ContentSourceError("selected source explicitly prohibits use")
+            continue
+        if content:
+            role = _content_role(metadata)
+            if role is None or counts[role] >= {"peer": 3, "method": 2}[role]:
+                continue
+            counts[role] += 1
         documents.append((token, text, _digest(text.encode("utf-8"))))
+    if selected is not None and len(documents) != len(selected):
+        raise ContentSourceError("selected Feishu assets are incompatible or exceed role budgets")
     return documents
 
 
@@ -499,22 +636,26 @@ def _asset_catalog(documents: list[tuple[str, str, str]], *, backend: str, role:
     objects: list[dict[str, str]] = []
     for object_ref, text, digest in documents:
         metadata, body = _split_frontmatter(text)
+        if _source_prohibited(metadata):
+            continue
         title = _title(metadata, body, Path(object_ref).stem)
         ref = _stable_ref(backend, object_ref, digest)
         objects.append({"backend": backend, "object_ref": object_ref, "content_sha256": digest})
         if role == "03":
-            status = metadata.get("status", "confirmed")
-            business.append({"ref": ref, "title": title, "keywords": _keywords(metadata, title), "excerpt": _excerpt(body), "fact_status": "confirmed" if status in {"active", "confirmed"} else "candidate", "content_sha256": digest})
+            business.append({"ref": ref, "title": title, "keywords": _keywords(metadata, title), "excerpt": _excerpt(body), "fact_status": _business_fact_status(metadata), "content_sha256": digest, "source_metadata": _source_metadata(metadata)})
             continue
-        asset_type = metadata.get("type")
-        workflows = metadata.get("applicable_workflows", [])
-        if asset_type in {"benchmark_deconstruction", "peer_content_asset"}:
+        content_role = _content_role(metadata)
+        if content_role == "peer":
             target = peer
-        elif asset_type == "content_method_asset" and isinstance(workflows, list) and WORKFLOW in workflows:
+        elif content_role == "method":
             target = methods
         else:
             continue
-        target.append({"ref": ref, "title": title, "keywords": _keywords(metadata, title), "excerpt": _excerpt(body), "content_sha256": digest})
+        # Keep the selected decomposition/structure sections, not only the leading 1200 characters.
+        if len(body) > 24000:
+            raise ContentSourceError("selected 04 asset exceeds 24000 characters; provide a scoped source asset")
+        target.append({"ref": ref, "title": title, "keywords": _keywords(metadata, title), "excerpt": body.strip(), "content_sha256": digest,
+                       "source_metadata": _source_metadata(metadata)})
     return business, peer, methods, objects
 
 
@@ -524,7 +665,10 @@ def resolve_real_source(
     registry_path: str | Path | None = None,
     lark_binary: str | None = None,
     lark_identity: str = "user",
-) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    retrieval_plan: dict[str, Any] | None = None,
+    discover_only: bool = False,
+    _source_preview: bool = False,
+) -> Any:
     """Resolve defaults, read 05→03→04, and return one frozen catalog/snapshot."""
 
     if not isinstance(raw_task, dict):
@@ -648,6 +792,37 @@ def resolve_real_source(
         profile_objects = [{"backend": backend, "object_ref": profile_object_ref, "content_sha256": actual_hash}]
         ip_identity = {"requested_name": canonical_ip, "resolved_ref": resolved_profile_ref, "status": payload["status"], "profile_id": profile["profile_id"]}
 
+    if discover_only:
+        if backend == "obsidian":
+            discovery = {role: _obsidian_inventory(vault, manifest["asset_roots"][root])
+                         for role, root in (("03", "knowledge"), ("04", "content"))}
+        else:
+            discovery = {role: [{"object_ref": node.get("obj_token"), "title": node.get("title"),
+                                 "node_ref": node.get("node_token"), "object_type": node.get("obj_type"),
+                                 "metadata_status": "title_only_until_selected_read"}
+                                for node in _feishu_inventory(client, space_id=space_id, parent_ref=manifest["asset_roots"][root])]
+                         for role, root in (("03", "knowledge"), ("04", "content"))}
+        return {"status": "discovery_only_no_run", "knowledge_base_id": binding["knowledge_base_id"],
+                "manifest_sha256": manifest_digest, "ip": ip_identity,
+                "inventory": discovery, "selection_budget": {"business_refs": 5, "peer_refs": 3, "method_refs": 2},
+                "read_stats": {"metadata_entries": {role: len(items) for role, items in discovery.items()},
+                               "local_prefix_max_characters": 32768 if backend == "obsidian" else 0,
+                               "selected_03_04_full_documents": 0},
+                "notice": "候选目录仅供语义选材，不代表已经采用；飞书标题不足时需读取候选正文核对适用范围。"}
+
+    if retrieval_plan is not None:
+        if not isinstance(retrieval_plan, dict) or set(retrieval_plan) - {"knowledge_base_id", "business_refs", "peer_refs", "method_refs", "query_terms", "rationale", "selection_snapshot"}:
+            raise ContentSourceError("invalid internal retrieval plan")
+        if retrieval_plan.get("knowledge_base_id") != binding["knowledge_base_id"]:
+            raise ContentSourceError("retrieval plan belongs to another knowledge base")
+        for key, budget in (("business_refs", 5), ("peer_refs", 3), ("method_refs", 2), ("query_terms", 12)):
+            items = retrieval_plan.get(key, [])
+            if not isinstance(items, list) or len(items) > budget or any(not isinstance(item, str) or not item.strip() for item in items) or len(set(items)) != len(items):
+                raise ContentSourceError(f"invalid retrieval plan {key}")
+        if not isinstance(retrieval_plan.get("rationale"), str) or not retrieval_plan["rationale"].strip():
+            raise ContentSourceError("retrieval plan requires semantic selection rationale")
+        if not _source_preview and not isinstance(retrieval_plan.get("selection_snapshot"), dict):
+            raise ContentSourceError("retrieval plan requires the selection_snapshot returned by preview-sources")
     query = " ".join(
         str(value or "")
         for value in (
@@ -657,12 +832,25 @@ def resolve_real_source(
             profile_catalog[0]["anchors"] if profile_catalog else "",
         )
     )
+    query += " " + " ".join((retrieval_plan or {}).get("query_terms", []))
+    selected_03 = retrieval_plan.get("business_refs", []) if retrieval_plan is not None else None
+    selected_04 = (retrieval_plan.get("peer_refs", []) + retrieval_plan.get("method_refs", [])) if retrieval_plan is not None else None
+    if selected_04 is not None and len(selected_04) != len(set(selected_04)):
+        raise ContentSourceError("retrieval plan assigns one 04 object to two roles")
     if backend == "obsidian":
-        documents_03 = _obsidian_documents(vault, manifest["asset_roots"]["knowledge"], query=query, limit=5)
-        documents_04 = _obsidian_documents(vault, manifest["asset_roots"]["content"], query=query, limit=5)
+        documents_03 = _obsidian_documents(vault, manifest["asset_roots"]["knowledge"], query=query, limit=5, selected=selected_03)
+        documents_04 = _obsidian_documents(vault, manifest["asset_roots"]["content"], query=query, limit=5, content=True, selected=selected_04)
+        source_read_counts = {"03": len(documents_03), "04": len(documents_04)}
     else:
-        documents_03 = _feishu_documents(client, space_id=space_id, parent_ref=manifest["asset_roots"]["knowledge"], query=query, limit=5)
-        documents_04 = _feishu_documents(client, space_id=space_id, parent_ref=manifest["asset_roots"]["content"], query=query, limit=5)
+        reads_03, reads_04 = {}, {}
+        documents_03 = _feishu_documents(client, space_id=space_id, parent_ref=manifest["asset_roots"]["knowledge"], query=query, limit=5, selected=selected_03, read_stats=reads_03)
+        documents_04 = _feishu_documents(client, space_id=space_id, parent_ref=manifest["asset_roots"]["content"], query=query, limit=5, content=True, selected=selected_04, read_stats=reads_04)
+        source_read_counts = {"03": reads_03.get("full_documents", 0), "04": reads_04.get("full_documents", 0)}
+    if retrieval_plan is not None:
+        for object_ref, text, _hash in documents_04:
+            expected = "peer" if object_ref in retrieval_plan.get("peer_refs", []) else "method"
+            if _content_role(_split_frontmatter(text)[0]) != expected:
+                raise ContentSourceError("retrieval plan 04 role differs from source metadata")
     business, _unused_peer, _unused_method, objects_03 = _asset_catalog(documents_03, backend=backend, role="03")
     _unused_business, peer, methods, objects_04 = _asset_catalog(documents_04, backend=backend, role="04")
 
@@ -709,6 +897,8 @@ def resolve_real_source(
             "business_assets": business,
             "peer_content_assets": peer,
             "content_method_assets": methods,
+            "candidates_preselected": True,
+            "source_read_counts": source_read_counts,
             "save_target": {"backend": backend, "target_ref": save_target_ref, "status": "preview_only_not_writable"},
         }],
         "references": references,
@@ -730,8 +920,27 @@ def resolve_real_source(
         "save_target_ref": save_target_ref,
         "objects": [*profile_objects, *objects_03, *objects_04, *reference_objects],
     }
+    if retrieval_plan is not None:
+        # Pin the material seen during semantic selection, not just its current path.
+        # These fields also bind a preview to the concrete Profile and task analyzed.
+        snapshot["ip_identity"] = ip_identity
+        snapshot["task_input_sha256"] = _digest(_canonical(task))
+        snapshot["retrieval_plan"] = {key: value for key, value in retrieval_plan.items() if key != "selection_snapshot"}
+        if not _source_preview and _canonical(retrieval_plan["selection_snapshot"]) != _canonical(snapshot):
+            raise ContentSourceError("selection preview changed; re-preview sources and redo analysis before starting or preparing Gate A")
     knowledge_base_identity["source_snapshot_sha256"] = "sha256:" + _digest(_canonical(snapshot))
     return task, knowledge_base_identity, ip_identity, catalog, snapshot
+
+
+def preview_real_source(raw_task: dict[str, Any], *, retrieval_plan: dict[str, Any], registry_path: str | Path | None = None, lark_binary: str | None = None, lark_identity: str = "user") -> dict[str, Any]:
+    """Read selected content and return the exact hash-pinned plan for start/Gate A."""
+    task, knowledge_base, ip, catalog, snapshot = resolve_real_source(
+        raw_task, registry_path=registry_path, lark_binary=lark_binary, lark_identity=lark_identity,
+        retrieval_plan=retrieval_plan, _source_preview=True,
+    )
+    pinned_plan = {**snapshot["retrieval_plan"], "selection_snapshot": snapshot}
+    return {"status": "source_preview_no_run", "task_input": task, "knowledge_base_identity": knowledge_base,
+            "ip_identity": ip, "catalog": catalog, "retrieval_plan": pinned_plan}
 
 
 def verify_source_snapshot(snapshot: dict[str, Any], *, lark_binary: str | None = None, lark_identity: str = "user") -> None:

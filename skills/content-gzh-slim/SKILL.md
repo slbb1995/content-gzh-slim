@@ -13,13 +13,14 @@ Use this as the only public entry. It orchestrates one deterministic Run and del
 - IP resolution is explicit request → workflow default → primary → sole active → ask. Any active Profile may be selected; primary is only a default.
 - `none` / `无IP` must be explicit in the request or in confirmed configuration.
 - The request shape is `schemas/task_request.schema.json`; the resolved Run still freezes a complete `schemas/task_input.schema.json`.
+- One client thought is enough to start discovery. Distinguish the client's viewpoint (`user_thoughts`), explicit verbatim article text (`must_keep`), and editorial instructions (`writing_requirements`). Do not put production instructions into `must_keep`; do not copy instructions into prose.
 
 ## Installed workflow
 
 1. Run the bundled `probe` described in [references/runtime-commands.md](references/runtime-commands.md).
 2. Resolve exactly one binding from the explicit request or `~/.codex/.content-workflows/knowledge-base-registry.json`. Without Registry, accept an explicit compatible Obsidian path or Feishu space URL. Do not scan the computer.
 3. Use the real Obsidian or Feishu source adapter to read the Manifest, Profile index, then bounded 05→03→04 assets. FixtureAdapter is test-only.
-4. With an IP, read bounded 05 first, then up to 5 relevant 03 candidates, then up to 3 peer and 2 method candidates from 04. Without an IP, skip 05. Record counts and characters.
+4. With an IP, read bounded 05 first. Use `discover-sources` to inspect the same Manifest's bounded 03/04 metadata, then prepare an internal semantic `retrieval_plan`: up to 5 business, 3 peer, 2 method objects. Choose by audience problem, content purpose, useful arguments/details and scope, not literal topic matching or a fixed genre word map. Use `preview-sources` to read the selected complete 04 sections before starting the Run; Feishu titles alone cannot establish suitability. Use exactly the returned hash-pinned `retrieval_plan` (including `selection_snapshot`) for both `start` and `prepare-gate-a`. A changed source, Manifest, Registry, Profile or task stops: re-preview and redo analysis, never attach old analysis to a refreshed hash. Reconsider unsuitable candidates within these budgets. Record counts and characters. Without an IP, skip 05.
 5. Prepare full snapshots for 0–5 explicit benchmarks. Never call an abstract or snippet a full article.
 6. Invoke `content-gzh-analyzer`, validate its deep analysis, prepare Gate A, show it, and stop.
 7. After the user selects an option when needed and replies exactly `确认方向`, record the approval and invoke `content-gzh-context-retriever` once. Runtime creates exactly one `article_context_v1.json`.
@@ -28,6 +29,8 @@ Use this as the only public entry. It orchestrates one deterministic Run and del
 10. End the main chain at `saved`. Only an exact later request `生成分发包` may invoke `content-gzh-distribution-pack`; it still does not publish.
 
 The Run freezes one knowledge base, one selected IP or `none`, the task input, source hashes, Manifest revision and reference set. Changing the selected IP creates a different Run even when both Profiles belong to the same knowledge base.
+
+With explicit benchmarks, prioritize their analysis and supplement from the library where useful. Without them, actively find useful peer content and combine its angle/arguments/scenes with suitable article structures. The client confirms the recommended content direction; do not require them to learn structure names or choose template cards. A peer's existing structure may be sufficient; a method card is not compulsory. Keep article-scale evidence and paragraph development rather than expanding an oral script mechanically. If material is insufficient for the intended claim, report the concrete gap in the existing direction stage; do not invent a benchmark or claim an empty retrieval was library-supported success.
 
 ## Gate boundary
 

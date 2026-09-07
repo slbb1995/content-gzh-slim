@@ -16,6 +16,7 @@
       "uniqueItems": true
     },
     "user_thoughts": {"type": "string"},
+    "writing_requirements": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true, "description": "Editorial instructions governing writing, never required verbatim article text."},
     "must_keep": {
       "type": "array",
       "items": {"type": "string", "minLength": 1},
@@ -30,4 +31,3 @@
     "article_length_preference": {"type": "string"}
   }
 }
-

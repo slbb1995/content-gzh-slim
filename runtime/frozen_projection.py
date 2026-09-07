@@ -129,6 +129,7 @@ class FrozenFixtureProjector:
                     "title": asset.get("title"),
                     "fragment": asset.get("excerpt"),
                     "fact_status": "confirmed",
+                    "source_metadata": asset.get("source_metadata", {}),
                 }
             )
 
@@ -149,12 +150,12 @@ class FrozenFixtureProjector:
             knowledge_base.get("content_method_assets"), "04 method assets"
         )
         selected_peer = [
-            {"ref": ref, "title": peer_assets[ref].get("title"), "fragment": peer_assets[ref].get("excerpt")}
+            {"ref": ref, "title": peer_assets[ref].get("title"), "fragment": peer_assets[ref].get("excerpt"), "source_metadata": peer_assets[ref].get("source_metadata", {})}
             for ref in peer_refs
             if ref in peer_assets
         ]
         selected_method = [
-            {"ref": ref, "title": method_assets[ref].get("title"), "fragment": method_assets[ref].get("excerpt")}
+            {"ref": ref, "title": method_assets[ref].get("title"), "fragment": method_assets[ref].get("excerpt"), "source_metadata": method_assets[ref].get("source_metadata", {})}
             for ref in method_refs
             if ref in method_assets
         ]
