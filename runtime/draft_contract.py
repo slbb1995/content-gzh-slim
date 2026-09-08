@@ -15,8 +15,12 @@ _FORBIDDEN_SECTION_MARKER = re.compile(
 _INTERNAL_EDITORIAL_NARRATION = (
     re.compile(
         r"(?:这里|本文|这篇文章|下文)[^。！？\n]{0,16}"
-        r"(?:不讲|不写|不采用|只看|只用|只使用|仅看|仅使用)[^。！？\n]{0,32}"
-        r"(?:客户故事|客户案例|入库资料|项目资料|知识库素材|素材说明)"
+        r"(?:不讲|不写|不采用)[^。！？\n]{0,32}(?:客户故事|客户案例)"
+    ),
+    re.compile(
+        r"(?:这里|本文|这篇文章|下文)[^。！？\n]{0,16}"
+        r"(?:只看|只用|只使用|仅看|仅使用)[^。！？\n]{0,20}"
+        r"(?:入库|知识库)[^。！？\n]{0,12}(?:素材|资料)"
     ),
     re.compile(
         r"(?:最后|文末)[^。！？\n]{0,30}(?:写作要求|素材说明|事实边界|素材边界)"
@@ -121,6 +125,9 @@ def validate_draft_body(body: Any, context: dict[str, Any]) -> str:
     for forbidden in context.get("must_avoid", []):
         if forbidden in normalized:
             raise DraftContractError(f"draft contains must_avoid: {forbidden}")
+    for requirement in context.get("task_input", {}).get("writing_requirements", []):
+        if len(requirement) >= 8 and requirement in normalized:
+            raise DraftContractError("draft copied an internal writing requirement into article prose")
 
     boundaries = context.get("fact_and_candidate_boundaries", {})
     for candidate in boundaries.get("excluded_business_candidates", []):

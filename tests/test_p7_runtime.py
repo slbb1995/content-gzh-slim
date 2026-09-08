@@ -71,7 +71,7 @@ class P7RuntimeTests(unittest.TestCase):
 
         self.assertEqual(probe.returncode, 0, probe.stderr)
         self.assertTrue(installed_is_symlink)
-        self.assertEqual(len(manifest["skills"]), 6)
+        self.assertEqual(len(manifest["skills"]), 7)
         self.assertFalse(manifest["credentials_included"])
         self.assertFalse(manifest["customer_data_included"])
         self.assertFalse(any(path.startswith("tests/") for path in manifest["files"]))

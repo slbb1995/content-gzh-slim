@@ -114,6 +114,9 @@ def build_direction(
             selected = _validate_source_list(selected_sources, key)
             if not set(selected).issubset(allowed):
                 raise DirectionContractError(f"direction selected an out-of-bundle {key}")
+        for field in ("must_keep", "must_avoid"):
+            if set(option[field]) != set(task_input.get(field, [])):
+                raise DirectionContractError(f"direction {field} differs from frozen user input")
         for selected_ref in selected_sources["business_refs"]:
             if business_status[selected_ref] != "confirmed":
                 raise DirectionContractError("unconfirmed business candidate cannot support a fact")
@@ -126,6 +129,11 @@ def build_direction(
     if len(option_ids) != len(set(option_ids)):
         raise DirectionContractError("direction option ids must be unique")
 
+    notices = list(retrieval["warnings"])
+    for option in options:
+        sources = option["selected_sources"]
+        if not sources["reference_refs"] and not sources["peer_refs"] and not sources["method_refs"]:
+            notices.append(f"方向 {option['option_id']} 未采用外部对标或 04 素材；当前仅依据用户想法和所选 03/05，不能声称已完成库内对标/结构融合。")
     return {
         "schema_version": 1,
         "run_id": run["run_id"],
@@ -133,7 +141,7 @@ def build_direction(
         "knowledge_base_identity": run["knowledge_base_identity"],
         "ip_identity": run["ip_identity"],
         "task_input": task_input,
-        "ip_notices": retrieval["warnings"],
+        "ip_notices": notices,
         "options": options,
         "approval_status": "waiting",
         "legal_decisions": ["确认方向", "需要修改：<具体意见>", "不采用"],

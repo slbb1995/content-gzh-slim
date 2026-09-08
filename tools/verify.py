@@ -12,7 +12,7 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILLS = {"content-gzh-slim", "content-gzh-analyzer", "content-gzh-context-retriever", "content-gzh-writer", "content-gzh-headline", "content-gzh-distribution-pack"}
+SKILLS = {"content-gzh-slim", "content-gzh-analyzer", "content-gzh-context-retriever", "content-gzh-writer", "content-gzh-headline", "content-gzh-distribution-pack", "content-gzh-cover"}
 
 
 def sha256(path: Path) -> str:
@@ -26,7 +26,7 @@ def main() -> int:
         raise RuntimeError("release manifest identity differs from VERSION")
     runtime = manifest.get("runtime", {})
     files = runtime.get("files", [])
-    if runtime.get("file_count") != len(files) or runtime.get("skill_count") != 6 or set(runtime.get("skills", [])) != SKILLS:
+    if runtime.get("file_count") != len(files) or runtime.get("skill_count") != 7 or set(runtime.get("skills", [])) != SKILLS:
         raise RuntimeError("release manifest file or Skill budget is invalid")
     for item in files:
         path = ROOT / item["path"]
@@ -51,7 +51,7 @@ def main() -> int:
     cli = subprocess.run([sys.executable, "-B", str(ROOT / "scripts" / "content-gzh-slim"), "--help"], cwd=ROOT, env=env, capture_output=True, text=True)
     if cli.returncode != 0 or "content-gzh-slim installed-host runtime" not in cli.stdout:
         raise RuntimeError("CLI smoke test failed")
-    print(f"PASS: Content 公众号 Slim {version}, 6 skills / {len(files)} deliverable files verified.")
+    print(f"PASS: Content 公众号 Slim {version}, 7 skills / {len(files)} deliverable files verified.")
     return 0
 
 

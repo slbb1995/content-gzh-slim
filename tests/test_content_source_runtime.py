@@ -229,7 +229,8 @@ class ContentSourceRuntimeTests(unittest.TestCase):
                 "missing_evidence": [],
             }
             selection_path.write_text(json.dumps(selection, ensure_ascii=False), encoding="utf-8")
-            P3Pipeline(store_root, artifacts.boundary.child("runs", run["run_id"], "source_catalog.json")).run(run["run_id"], selection_path)
+            context_result = P3Pipeline(store_root, artifacts.boundary.child("runs", run["run_id"], "source_catalog.json")).run(run["run_id"], selection_path)
+            self.assertEqual(context_result["context"]["selected_04_method_assets"][0]["source_metadata"]["audience_scope"], "both")
             headline = {"diagnosis": {"target_audience": "企业负责人", "core_judgment": "先诊断再行动", "click_tension": "工具投入与结果之间的落差"}, "top3": [{"title": "企业服务，先别急着给方案", "reason": "突出诊断"}, {"title": "为什么先问清这件事", "reason": "制造行动感"}, {"title": "一套不跑偏的需求诊断顺序", "reason": "强调方法"}], "recommended": "企业服务，先别急着给方案"}
             P4Pipeline(store_root).run_initial(run["run_id"], "很多方案没有效果，不一定是工具不够好。先把真实问题、责任人和下一步问清楚，再决定需要什么方案。这样每一步都有资料可以回查，也不会把未经确认的判断写成事实。", headline)
             store.approve_gate(run["run_id"], "B", "确认正文和标题")

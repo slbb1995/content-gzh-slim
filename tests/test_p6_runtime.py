@@ -389,8 +389,8 @@ class P6RuntimeTests(unittest.TestCase):
             run = store.load(run_id)
 
         skills = list((Path(__file__).parents[1] / "skills").glob("*/SKILL.md"))
-        self.assertEqual(len(skills), 6)
-        self.assertEqual(len([path for path in skills if path.parent.name != "content-gzh-slim"]), 5)
+        self.assertEqual(len(skills), 7)
+        self.assertEqual(len([path for path in skills if path.parent.name != "content-gzh-slim"]), 6)
         self.assertEqual(len([name for name in names if name.startswith("article_context")]), 1)
         self.assertEqual(len(run["gate_approvals"]), 2)
         self.assertEqual(receipt["totals"]["context_packs"], 1)

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Content 公众号封面"
+  short_description: "为已保存公众号文章按选定风格生成一张封面，检查后自动保存"
+  default_prompt: "使用 $content-gzh-cover 为已保存的文章生成一张选定风格的公众号封面。"

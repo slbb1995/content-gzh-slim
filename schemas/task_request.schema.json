@@ -10,6 +10,7 @@
     "topic": {"type": "string"},
     "references": {"type": "array", "maxItems": 5, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
     "user_thoughts": {"type": "string"},
+    "writing_requirements": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
     "must_keep": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
     "must_avoid": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
     "target_audience_override": {"type": "string"},

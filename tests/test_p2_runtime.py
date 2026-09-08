@@ -195,6 +195,8 @@ class P2RuntimeTests(unittest.TestCase):
 
         base = copy.deepcopy(read_json("p2_direction.json")["options"][0])
         base["selected_sources"]["reference_refs"] = []
+        base["must_keep"] = no_direction["must_keep"]
+        base["must_avoid"] = no_direction["must_avoid"]
         options = []
         for index in range(3):
             option = copy.deepcopy(base)

@@ -20,6 +20,7 @@ _ALLOWED_KEYS = {
     "must_avoid",
     "target_audience_override",
     "article_length_preference",
+    "writing_requirements",
 }
 
 _OPTIONAL_TEXT_KEYS = {
@@ -31,15 +32,18 @@ _OPTIONAL_TEXT_KEYS = {
 
 _PRIVATE_MUST_KEEP_PATTERNS = (
     re.compile(
-        r"(?:这里|本文|这篇文章).{0,12}(?:不讲|不写|不采用|只看|只用|只使用|仅看|仅使用)"
-        r".{0,24}(?:客户故事|客户案例|素材|资料|知识库)"
+        r"(?:这里|本文|这篇文章)[^。！？\n]{0,12}(?:不讲|不写|不采用)"
+        r"[^。！？\n]{0,24}(?:客户故事|客户案例)"
     ),
-    re.compile(r"(?:写作要求|素材说明|内部需求|生产要求|事实边界|素材边界)"),
+    re.compile(r"(?m)^\s*(?:写作要求|素材说明|内部需求|生产要求|事实边界|素材边界)\s*[:：]"),
     re.compile(
-        r"(?:不得|不要|不准|禁止).{0,12}(?:虚构|编造|展示|写入)"
-        r".{0,20}(?:客户|案例|素材|内部|要求)"
+        r"(?:请|本篇|本次写作|正文中)[^。！？\n]{0,12}(?:不得|不要|不准|禁止)"
+        r"[^。！？\n]{0,12}(?:虚构|编造|展示|写入)[^。！？\n]{0,20}(?:客户|案例|素材|内部|要求)"
     ),
-    re.compile(r"(?:只|仅)(?:使用|看).{0,20}(?:入库|知识库).{0,12}(?:素材|资料)"),
+    re.compile(
+        r"(?:这里|本文|这篇文章|下文|本次写作|请)[^。！？\n]{0,12}"
+        r"(?:只|仅)(?:使用|看|采用)[^。！？\n]{0,20}(?:入库|知识库)[^。！？\n]{0,12}(?:素材|资料)"
+    ),
 )
 
 
@@ -73,7 +77,7 @@ def _validate_reader_visible_must_keep(items: list[str]) -> list[str]:
         if any(pattern.search(item) for pattern in _PRIVATE_MUST_KEEP_PATTERNS):
             raise ContractError(
                 "must_keep is reader-visible exact content; put private production requirements "
-                "in user_thoughts or must_avoid"
+                "in writing_requirements or must_avoid"
             )
     return items
 
@@ -107,4 +111,9 @@ def validate_task_input(payload: Any) -> dict[str, Any]:
     }
     for key in _OPTIONAL_TEXT_KEYS:
         normalized[key] = _optional_text(payload.get(key), key)
+    if "writing_requirements" in payload:
+        requirements = _string_set(payload["writing_requirements"], "writing_requirements")
+        if set(requirements) & set(normalized["must_keep"]):
+            raise ContractError("editorial writing_requirements cannot also be must_keep article text")
+        normalized["writing_requirements"] = requirements
     return normalized

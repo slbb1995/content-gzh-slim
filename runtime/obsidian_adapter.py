@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import json
+import hashlib
 import re
 from pathlib import Path
 from typing import Any
@@ -18,6 +20,28 @@ class SaveAdapterError(RuntimeError):
 def _slug(title: str) -> str:
     value = re.sub(r"[^\w\-]+", "-", title, flags=re.UNICODE).strip("-._")
     return (value[:80] or "article") + ".md"
+
+
+def split_cover(text: str) -> tuple[str, str | None, str | None]:
+    """Remove only our exact top-level cover extension, never arbitrary body text."""
+    pattern = (r"\A(---\ncontent_gzh_version: \d+\n"
+               r"content_gzh_body_digest: [a-f0-9]{64}\n"
+               r"content_gzh_context_digest: [a-f0-9]{64}\n)"
+               r"cover: ([^\n]+)\ncontent_gzh_cover_sha256: ([a-f0-9]{64})\n---\n")
+    match = re.match(pattern, text)
+    if not match:
+        return text, None, None
+    try:
+        relative = json.loads(match.group(2))
+    except ValueError as exc:
+        raise SaveAdapterError("invalid managed cover path") from exc
+    if not isinstance(relative, str) or not relative.endswith(".png") or Path(relative).is_absolute() or ".." in Path(relative).parts or any(x in relative for x in "\n\r[]<>|\\"):
+        raise SaveAdapterError("invalid managed cover path")
+    block = f"<!-- content-gzh:cover -->\n![[{relative}]]\n<!-- /content-gzh:cover -->\n"
+    remaining = text[match.end():]
+    if not remaining.startswith(block + "# "):
+        raise SaveAdapterError("managed cover metadata and embed differ")
+    return match.group(1) + "---\n" + remaining[len(block):], relative, match.group(3)
 
 
 class ObsidianAdapter:
@@ -63,8 +87,9 @@ class ObsidianAdapter:
             descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         except FileExistsError:
             existing = path.read_text(encoding="utf-8")
-            if existing != payload:
+            if split_cover(existing)[0] != payload:
                 raise SaveAdapterError("Obsidian article name conflicts with different content")
+            self.read_back({"object_ref": str(path)})
             return {"backend": self.backend, "object_ref": str(path), "created": False}
         with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
             handle.write(payload)
@@ -78,6 +103,11 @@ class ObsidianAdapter:
             text = path.read_text(encoding="utf-8")
         except OSError as exc:
             raise SaveAdapterError("Obsidian article readback failed") from exc
+        text, cover, cover_hash = split_cover(text)
+        if cover:
+            image = self.boundary.child(cover)
+            if not image.is_file() or hashlib.sha256(image.read_bytes()).hexdigest() != cover_hash:
+                raise SaveAdapterError("managed cover image is missing or changed")
         match = re.fullmatch(
             r"---\ncontent_gzh_version: (\d+)\n"
             r"content_gzh_body_digest: ([a-f0-9]{64})\n"
