@@ -22,6 +22,7 @@ SKILLS = (
     "content-gzh-writer",
     "content-gzh-headline",
     "content-gzh-distribution-pack",
+    "content-gzh-cover",
 )
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ""}
 FORBIDDEN_TEXT = (
@@ -72,9 +73,10 @@ def _manifest(root: Path, revision: str) -> dict:
         "schema_version": 1,
         "package": "content-gzh-slim-p7-candidate",
         "source_revision": revision,
+        "source_revision_semantics": "base commit; exact installed bytes are pinned in files",
         "skills": list(SKILLS),
         "public_entry": "content-gzh-slim",
-        "internal_skill_count": 5,
+        "internal_skill_count": 6,
         "human_gate_count": 2,
         "reviewer_count": 0,
         "credentials_included": False,

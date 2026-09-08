@@ -22,6 +22,7 @@ SKILLS = (
     "content-gzh-writer",
     "content-gzh-headline",
     "content-gzh-distribution-pack",
+    "content-gzh-cover",
 )
 
 
@@ -44,9 +45,10 @@ def _package_manifest(root: Path) -> dict:
         "schema_version": 1,
         "package": f"content-gzh-slim-{(ROOT / 'VERSION').read_text(encoding='utf-8').strip()}",
         "source_revision": revision,
+        "source_revision_semantics": "base commit; exact installed bytes are pinned in files",
         "skills": list(SKILLS),
         "public_entry": "content-gzh-slim",
-        "internal_skill_count": 5,
+        "internal_skill_count": 6,
         "human_gate_count": 2,
         "reviewer_count": 0,
         "credentials_included": False,
