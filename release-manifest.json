@@ -40,9 +40,9 @@
         "sha256": "0405c9a709b90a6de879901106c4a2cc6dbbc84ad245af052f9d82ea2ff5146e"
       },
       {
-        "bytes": 3026,
+        "bytes": 4290,
         "path": "runtime/contracts.py",
-        "sha256": "96f6a5a8f686f6f4a476a7aa6f320fb31fa447a3d40d1da00b00c16a9c5411fd"
+        "sha256": "a41dcb0aff80ede8bb76120795a05a2104299a84307ee21777c30cbfb9f0bd81"
       },
       {
         "bytes": 12401,
@@ -60,9 +60,9 @@
         "sha256": "548a6c26ccfc7827bae3d8dcbcb0073f903f660724b2e4baf92de02a841f9f0f"
       },
       {
-        "bytes": 5851,
+        "bytes": 7015,
         "path": "runtime/draft_contract.py",
-        "sha256": "cb7d480d4448954088881118a5273ea2f3ff38d0fcff0063e702e81caba3f9e3"
+        "sha256": "ffe736763dd41b051c409a24530ada9fe7e955e18ac406381d2e1e090a25a3d8"
       },
       {
         "bytes": 1890,
@@ -295,9 +295,9 @@
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
       },
       {
-        "bytes": 5275,
+        "bytes": 5998,
         "path": "skills/content-gzh-analyzer/references/analysis-contract.md",
-        "sha256": "b1346cc92d67d33882af2bcaad4e4387d97cdc08bd6597ccfb9d7ff754e56d52"
+        "sha256": "1f8655415a2394c021fab312a5c638db8d8e102283d01617b0088e3f0a6e9b6f"
       },
       {
         "bytes": 988,
@@ -370,9 +370,9 @@
         "sha256": "c6692d9ba41da239bcd113f76e49c0ab74b0685558c09dba75eee57c7d7001c3"
       },
       {
-        "bytes": 1627,
+        "bytes": 2496,
         "path": "skills/content-gzh-writer/SKILL.md",
-        "sha256": "8585ab7c5d6ed2b50d6fd765880b6f5c8b42e8a94df7cfb092e7fbcde949c14f"
+        "sha256": "24f9bc5f95227c342b5d8820b5f5326b12764376a5304b802be5c5ee8c1895fc"
       },
       {
         "bytes": 43,
@@ -380,14 +380,14 @@
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
       },
       {
-        "bytes": 448,
+        "bytes": 890,
         "path": "skills/content-gzh-writer/references/ganhuo.md",
-        "sha256": "87f59b8e0393734989ef1ceda993f352f6b03498287469b85320f87c8f2fc3e8"
+        "sha256": "46506e60108b77c102530aa8da1f7a06d92f9c86dce7d06c5f65c750b0ee63c3"
       },
       {
-        "bytes": 454,
+        "bytes": 815,
         "path": "skills/content-gzh-writer/references/huati.md",
-        "sha256": "635b3c69ab49a3d2582bedc99f21ee9548c37c6dbc5df8937251618be9d8b06b"
+        "sha256": "97aa81017c1400e6d5a23140334dd315132d2b1ce443d79b8303238f73a6ab50"
       }
     ],
     "skill_count": 7,
@@ -400,7 +400,7 @@
       "content-gzh-slim",
       "content-gzh-writer"
     ],
-    "tree_sha256": "60eccfc2af7e6f305726c8b2d3a8a465c40cbf9cc57c790ff1acbc0ee995b1ef"
+    "tree_sha256": "0ab0d7dcf0ca16386abe6dc89fa940b410493d810b9a952b65dceb26f2c7022d"
   },
   "schema_version": "content-gzh-slim-release-v1"
 }
