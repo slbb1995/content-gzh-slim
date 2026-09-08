@@ -19,6 +19,7 @@ from .content_source import (
     resolve_real_source,
     verify_source_snapshot,
 )
+from .cover import CoverService, STYLES
 from .contracts import validate_task_input
 from .distribution_service import DistributionService
 from .feishu_adapter import FeishuAdapter
@@ -85,7 +86,7 @@ def _real_snapshot(store: Path, run_id: str) -> dict[str, Any] | None:
         return None
 
 
-def _verify_real_run(store: Path, run_id: str, *, identity: str) -> dict[str, Any] | None:
+def _verify_real_run(store: Path, run_id: str, *, identity: str, verify_sources: bool = True) -> dict[str, Any] | None:
     snapshot = _real_snapshot(store, run_id)
     if snapshot is not None:
         expected = RunStore(store).load(run_id).get("knowledge_base_identity", {}).get("source_snapshot_sha256")
@@ -94,13 +95,14 @@ def _verify_real_run(store: Path, run_id: str, *, identity: str) -> dict[str, An
         ).hexdigest()
         if expected != actual:
             raise ContentSourceError("source snapshot does not match the frozen Run identity")
-        verify_source_snapshot(snapshot, lark_identity=identity)
+        if verify_sources:
+            verify_source_snapshot(snapshot, lark_identity=identity)
     return snapshot
 
 
-def _derived_adapter(store: Path, run_id: str, *, identity: str) -> dict[str, Any]:
+def _derived_adapter(store: Path, run_id: str, *, identity: str, verify_sources: bool = True) -> dict[str, Any]:
     run = RunStore(store).load(run_id)
-    snapshot = _verify_real_run(store, run_id, identity=identity)
+    snapshot = _verify_real_run(store, run_id, identity=identity, verify_sources=verify_sources)
     if snapshot is None:
         raise ContentSourceError("legacy fixture Run requires its explicit isolated save adapter")
     target_ref = snapshot["save_target_ref"]
@@ -237,6 +239,16 @@ def build_parser() -> argparse.ArgumentParser:
     distribution.add_argument("--candidate", required=True, type=Path)
     distribution.add_argument("--request", required=True)
 
+    for name in ("cover-context", "save-cover"):
+        cover = commands.add_parser(name)
+        cover.add_argument("--run-id", required=True)
+        cover.add_argument("--store", type=Path)
+        cover.add_argument("--identity", choices=("user", "bot"), default="user")
+        if name == "cover-context":
+            cover.add_argument("--style", required=True, choices=STYLES)
+        else:
+            cover.add_argument("--candidate", required=True, type=Path)
+
     status = commands.add_parser("status")
     status.add_argument("--run-id", required=True)
     status.add_argument("--store", type=Path)
@@ -353,6 +365,19 @@ def main() -> int:
                 candidate=_read_json(args.candidate),
             )
             _emit(result["distribution"])
+        elif args.command in {"cover-context", "save-cover"}:
+            root = _store(args)
+            if _real_snapshot(root, args.run_id) is None:
+                raise ValueError("Host cover commands require a real saved Run; fixtures are test-only")
+            adapters = _derived_adapter(root, args.run_id, identity=args.identity, verify_sources=False)
+            backend = RunStore(root).load(args.run_id)["knowledge_base_identity"]["backend"]
+            service = CoverService(root, adapters[backend])
+            if args.command == "cover-context":
+                _emit(service.context(args.run_id, args.style))
+            else:
+                result = service.save(args.run_id, _read_json(args.candidate))
+                result["cover"].pop("previous_document", None)
+                _emit(result)
         elif args.command == "status":
             run = RunStore(_store(args)).load(args.run_id)
             _emit(
@@ -360,6 +385,9 @@ def main() -> int:
                     "run_id": args.run_id,
                     "status": run["status"],
                     "gate_count": len(run.get("gate_approvals", [])),
+                    "covers": [{key: value.get(key) for key in ("style", "image_path", "applied")}
+                               for path in ArtifactStore(_store(args)).boundary.child("runs", args.run_id).glob("cover-*.json")
+                               for value in [_read_json(path)]],
                     "draftbox": False,
                     "published": False,
                 }

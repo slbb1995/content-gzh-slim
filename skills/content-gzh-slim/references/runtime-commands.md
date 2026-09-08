@@ -19,7 +19,7 @@ The Host owns all backend access and AI outputs. `--store` is optional and defau
 9. Real Runs use `save --run-id ...`; the adapter and target come only from the frozen Manifest. Legacy fixture save commands remain test compatibility paths.
 10. `generate-distribution` is optional and requires the exact request `生成分发包` after save. `status` reports the real Run state. No draft-box or publish command exists.
 
-Run `probe` before the first task. It verifies the package manifest, six Skill files, checksums, and the absence of copied credentials or a V1 replacement claim.
+Run `probe` before the first task. It verifies the package manifest, seven Skill files, checksums, and the absence of copied credentials or a V1 replacement claim.
 
 The initial internal selection request is not a new customer form or Writer packet:
 
@@ -41,3 +41,10 @@ Preview returns the same plan plus `selection_snapshot`: knowledge-base identity
 Scope fields (`audience_scope`, `usage_scope`, `maturity`, `source_verification`, `claim_scope`) remain attached to selected material through the Context. Explicit `blocked`, `do_not_use` or `forbidden` prohibitions stop selection. Experimental/reference-only or unverified labels remain visible for semantic judgment and must not become confirmed client facts. Legacy Feishu discovery may read more documents to determine their roles before filling the separate peer/method budgets; the receipt reports actual reads. Explicit semantic plans read only their selected objects.
 
 `writing_requirements` in the existing input object is an optional string list of editorial instructions. The frozen task carries it inside the sole Context; it is never a second packet and never a verbatim `must_keep` requirement. Existing inputs without this field retain their prior normalized identity.
+
+
+## Optional single cover
+
+After a real saved Run, use `cover-context --run-id ... --style consulting|retro-ink|raster-tech [--store ...]` to read verified article and any existing same-style cover. The Host loads `content-gzh-cover` and the chosen style, calls the real image tool once, checks the image, then calls `save-cover --run-id ... --candidate <JSON> [--store ...]`. No command generates an image by itself. The candidate format lives in `content-gzh-cover/SKILL.md`.
+
+The source adapter is derived from the same frozen Manifest; fixture-only Run access is limited to repository tests. `status` reports covers separately from the writing status. No extra writing Gate or cover state machine is added. Only the chosen style is generated; three-style testing is a developer activity, not the customer path. Feishu covers are local-only until remote image writing is implemented.

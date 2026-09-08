@@ -4,10 +4,10 @@
   },
   "package": {
     "id": "content-gzh-slim",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "runtime": {
-    "file_count": 70,
+    "file_count": 76,
     "files": [
       {
         "bytes": 495,
@@ -43,6 +43,11 @@
         "bytes": 3026,
         "path": "runtime/contracts.py",
         "sha256": "96f6a5a8f686f6f4a476a7aa6f320fb31fa447a3d40d1da00b00c16a9c5411fd"
+      },
+      {
+        "bytes": 12401,
+        "path": "runtime/cover.py",
+        "sha256": "0fa53ec314858a43747be2fad8e7f4f100105066ba5d0a3a5a328432e91ab46c"
       },
       {
         "bytes": 6163,
@@ -95,9 +100,9 @@
         "sha256": "63f0ee8c701d624c1fae530de339a8741ba8bceeed724bf427f960d07e48362e"
       },
       {
-        "bytes": 16886,
+        "bytes": 18627,
         "path": "runtime/host_cli.py",
-        "sha256": "8086d68e6faab6f2d26c2c425eb5c590ebd7517d6d56e5dac8420ac2ae12bd18"
+        "sha256": "ecce9669cbf1495ef2d773dfa13d9ca5523987b77545a304139fa26fe3066840"
       },
       {
         "bytes": 7418,
@@ -105,9 +110,9 @@
         "sha256": "212dab7a2b9860a81393fa3ec52aec5260ae578b1f1835a0f83f804f2e1738d7"
       },
       {
-        "bytes": 4040,
+        "bytes": 5664,
         "path": "runtime/obsidian_adapter.py",
-        "sha256": "707680aa75c600d926f5b6e1444171e699720ddc705cc25a41fc2fa18c9d0577"
+        "sha256": "7f3ccab11155458c1e6c670d38ae0bfe6d114216fa4956e5bd8f2102d1fb5345"
       },
       {
         "bytes": 1554,
@@ -310,6 +315,31 @@
         "sha256": "d51164cc43f88ba739c67ab7f26dcb96837e4c550775f6dd774cb9a5d3b5c6c8"
       },
       {
+        "bytes": 6246,
+        "path": "skills/content-gzh-cover/SKILL.md",
+        "sha256": "6506dd13517ceebd2e3a20e1c77d518cafc12eae9ffe285d39f86e239ca07fd9"
+      },
+      {
+        "bytes": 274,
+        "path": "skills/content-gzh-cover/agents/openai.yaml",
+        "sha256": "b51809c2e6b0f3d0e59c6d0496d4f3ab96d3e39022eea8ad4383e68f95708cd7"
+      },
+      {
+        "bytes": 1203,
+        "path": "skills/content-gzh-cover/references/consulting.md",
+        "sha256": "0e3346b2729d4631e6d8116322a462a2a3e3b71b957e3ea8255fcd5219103ae6"
+      },
+      {
+        "bytes": 740,
+        "path": "skills/content-gzh-cover/references/raster-tech.md",
+        "sha256": "537541814e4a54da1ece6fa92fc07dc7babe88b2074b3f6a2bbf2cc1ba01ad94"
+      },
+      {
+        "bytes": 721,
+        "path": "skills/content-gzh-cover/references/retro-ink.md",
+        "sha256": "6eca2950d408577c405eaf66f51d7f00f821150e79e25166a23032822952f63e"
+      },
+      {
         "bytes": 1059,
         "path": "skills/content-gzh-distribution-pack/SKILL.md",
         "sha256": "1142c4518b88db6bcb46c685708103a5f0c7acf197ea0945f2b87e302f748cf6"
@@ -330,14 +360,14 @@
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
       },
       {
-        "bytes": 5743,
+        "bytes": 6395,
         "path": "skills/content-gzh-slim/SKILL.md",
-        "sha256": "c0428ca01579513305b361aec7fe00ad14fe3aa708211e5b494ad5bf828f242d"
+        "sha256": "b46edddacb46668d2806b4afa1d3b764a26b76917e28b002b226a8b52dcea1dc"
       },
       {
-        "bytes": 4744,
+        "bytes": 5634,
         "path": "skills/content-gzh-slim/references/runtime-commands.md",
-        "sha256": "89ddf75867cbc31de9c2d7dc6efe39490fdc350660aa0ad0d13e17c02a75d292"
+        "sha256": "c6692d9ba41da239bcd113f76e49c0ab74b0685558c09dba75eee57c7d7001c3"
       },
       {
         "bytes": 1627,
@@ -360,16 +390,17 @@
         "sha256": "635b3c69ab49a3d2582bedc99f21ee9548c37c6dbc5df8937251618be9d8b06b"
       }
     ],
-    "skill_count": 6,
+    "skill_count": 7,
     "skills": [
       "content-gzh-analyzer",
       "content-gzh-context-retriever",
       "content-gzh-distribution-pack",
+      "content-gzh-cover",
       "content-gzh-headline",
       "content-gzh-slim",
       "content-gzh-writer"
     ],
-    "tree_sha256": "acaf8c5acc1e5126841cfb34d093d38a1bfd74b89afcc747cfca293b14f0cf54"
+    "tree_sha256": "60eccfc2af7e6f305726c8b2d3a8a465c40cbf9cc57c790ff1acbc0ee995b1ef"
   },
   "schema_version": "content-gzh-slim-release-v1"
 }

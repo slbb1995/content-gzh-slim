@@ -2,12 +2,12 @@
   "project": "content-gzh-slim",
   "schema_version": 1,
   "repository_visibility": "public",
-  "current_phase": "content-source-v1-release",
-  "current_status": "main_public_release_and_local_install_verified",
+  "current_phase": "single-cover-integration",
+  "current_status": "cover_integration_verified",
   "implementation_started": true,
   "installed": true,
   "published": true,
-  "authorized_phase": "content-source-v1-release",
+  "authorized_phase": "single-cover-integration",
   "next_phase": null,
   "next_phase_authorized": false,
   "content_source_v1_security_audit": "pass_current_tree_and_full_git_history",
@@ -19,8 +19,8 @@
   "entry_skill": "content-gzh-slim",
   "skill_budget": {
     "public_entry": 1,
-    "internal_ai_skills": 5,
-    "total_skills": 6,
+    "internal_ai_skills": 6,
+    "total_skills": 7,
     "human_gates": 2,
     "writer_context_packs": 1,
     "reviewer_skills": 0
@@ -97,7 +97,15 @@
   "p6_real_matrix_status": "pass_user_authorized_isolated_scope",
   "p6_authorized_sample_count": 3,
   "p6_isolated_run_count": 5,
-  "p6_real_matrix_coverage": ["full_ip", "no_ip", "limited_ip", "same_kb_multi_ip", "explicit_reference", "no_reference", "obsidian_isolated_save_readback"],
+  "p6_real_matrix_coverage": [
+    "full_ip",
+    "no_ip",
+    "limited_ip",
+    "same_kb_multi_ip",
+    "explicit_reference",
+    "no_reference",
+    "obsidian_isolated_save_readback"
+  ],
   "p6_feishu_status": "fake_client_only_final_real_evidence_pending_p7",
   "p7_authorization_status": "authorized_with_project_install_real_feishu_and_two_human_gated_runs",
   "p7_development_tests": "63_passed",
@@ -143,7 +151,10 @@
   "p8_synthetic_test_scope_authorized": true,
   "p8_synthetic_test_shared_ip_name": "P8测试IP",
   "p8_gate_decision_origin": "user_authorized_pm_delegation_synthetic_scope_only",
-  "p8_runtime_waiting_states_required": ["waiting_direction", "waiting_final"],
+  "p8_runtime_waiting_states_required": [
+    "waiting_direction",
+    "waiting_final"
+  ],
   "p8_real_run_status": "run_a_context_blocked_and_run_b_gate_b_blocked_first_attempts_preserved",
   "p8_run_a_context_packs": 0,
   "p8_run_a_human_gates": 1,
@@ -164,7 +175,10 @@
   "p8_merge_eligible": true,
   "p8_main_merged": true,
   "p8_origin_main_merge_commit": "47c59f0c7639913b7fd9f0c7968a1985bd779b03",
-  "p8_recheck_requires_fresh_runs": ["A2", "B2"],
+  "p8_recheck_requires_fresh_runs": [
+    "A2",
+    "B2"
+  ],
   "p8_original_a_b_resume_or_retry_allowed": false,
   "p8_recheck_a2_b2_status": "passed_fresh_run_stores",
   "p8_recheck_a2_context_packs": 1,
@@ -186,7 +200,7 @@
   "p7_pm_recheck_rounds": 0,
   "p7_reviewed_revision": "0d64c71a5560e68acc6a80d0dbd77b82a4b1fae3",
   "distribution_status": "controlled_fixture_only_real_workbuddy_not_requested",
-  "skill_total_actual": 6,
+  "skill_total_actual": 7,
   "p3_d01_status": "resolved_by_explicit_option_id_binding",
   "deferred_issues": [
     {
@@ -246,5 +260,27 @@
     "primary_is_default_not_exclusive",
     "real_obsidian_and_feishu_source_adapters",
     "manifest_derived_save_target_only"
-  ]
+  ],
+  "cover_integration": {
+    "version": "1.1.0",
+    "status": "verified",
+    "styles": [
+      "consulting",
+      "retro-ink",
+      "raster-tech"
+    ],
+    "human_gates_added": 0,
+    "independent_flow_review": "pass_after_one_minimal_repair_round",
+    "normal_path_e2e": "pass_synthetic_with_real_installed_launcher_obsidian_adapter_imagegen_and_file_writeback",
+    "production_human_gate_e2e": false,
+    "generated_image_count": 1,
+    "body_and_existing_run_files_unchanged": true,
+    "repaired": [
+      "preflight_rejects_unembeddable_attachment_path_before_write",
+      "context_exposes_valid_interrupted_cover_for_reuse_and_recovery"
+    ],
+    "feishu_remote_cover_writeback": false,
+    "real_workbuddy_host_tested": false,
+    "git_delivery_authorized": true
+  }
 }

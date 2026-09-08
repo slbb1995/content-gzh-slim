@@ -13,6 +13,7 @@ SKILLS = (
     "content-gzh-analyzer",
     "content-gzh-context-retriever",
     "content-gzh-distribution-pack",
+    "content-gzh-cover",
     "content-gzh-headline",
     "content-gzh-slim",
     "content-gzh-writer",

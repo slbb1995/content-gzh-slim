@@ -29,7 +29,7 @@ Agent 负责选材，客户无需先找对标或选择结构卡。04 同行材�
 - Gate A 后 Manifest、Profile 索引、03、04、05、Registry 或显式参考发生变化，会保留旧产物并停止。
 - 主链只有两次真人确认：方向、正文与标题。
 - Writer 只读取一份唯一 Article Context Pack。
-- 正文确认后保存回本次指定知识库；全平台分发包是可选支线。
+- 正文确认后保存回本次指定知识库；单张封面和全平台分发包是可选支线。
 - 现役 `shu-gongzhonghao-v1` 只作为冻结对照组，不在本仓库修改。
 
 ## 与 ZSK、口播的关系
@@ -80,9 +80,9 @@ python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识
 
 ## 仓库状态
 
-- Version：1.0.0
-- Implementation：P8 主链 + `content-source-v1`
-- Skills：1 个公开入口 + 5 个内部 Skill
+- Version：1.1.0
+- Implementation：P8 主链 + `content-source-v1` + 单张封面
+- Skills：1 个公开入口 + 6 个内部 Skill
 - Human Gates：2
 - Writer Context Pack：1
 - Publishing：不进入公众号草稿箱，不发布
@@ -90,3 +90,13 @@ python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识
 ## 许可证
 
 [MIT License](LICENSE)
+
+## 可选封面
+
+文章保存后，一次性用文字介绍三种风格并按本篇推荐一种；用户选择或委托后，由 `content-gzh-cover` 生成一张并保存。支持麦肯锡商业咨询、复古油墨极简、光栅渐变科技。已指定风格无需再次选择，不新增正文 Gate。Obsidian 支持封面写回；飞书仅生成本地封面，不自动插入飞书文章。
+
+封面从正文提炼短标题和画面，保持所选风格。先保证 2.35:1 横图构图均衡，再检查同图左侧 1:1 裁切文字完整；字少保留合理留白，不放大填满方形。
+
+生图需要当前宿主的 `imagegen` Skill 和实际图片工具；Runtime 负责已有文章绑定、保存和回读，不声称能自行生图。缺少生图能力时停止对应环节。安装应使用完整包，不单独复制封面 Skill。
+
+独立隔离验收已实跑知识库读取、两次合成确认、正文保存、一次真实生图、封面写回与重复保存；测试保持正文及原 Run 文件不变。另已复现并修复特殊附件路径的写前校验与保存中断后的图片复用问题。上述合成验收不等于真实客户生产批准，不包含飞书远端插图或真实 WorkBuddy 宿主验收。
