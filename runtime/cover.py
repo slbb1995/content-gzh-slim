@@ -1,7 +1,6 @@
 """One cover record and a PNG; the Host owns style decisions and real generation."""
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
@@ -13,13 +12,14 @@ import zlib
 from .approved_direction import canonical_digest
 from .artifact_store import ArtifactStore
 from .distribution_contract import validate_saved_receipt
+from .file_lock import exclusive_lock
 from .obsidian_adapter import SaveAdapterError, split_cover
 from .run_store import RunStore
 from .save_contract import is_protected_segment
 from .save_service import SaveService
 
 LAYOUT_VERSION = "wide-balanced-square-v2"
-STYLES = ("consulting", "retro-ink", "raster-tech")
+STYLES = ("consulting", "real-photo", "retro-blueprint")
 
 
 def digest(data: bytes) -> str:
@@ -109,7 +109,7 @@ class CoverService:
         raw_digest = digest(Path(live["object_ref"]).read_bytes()) if self.adapter.backend == "obsidian" else canonical_digest(live)
         existing = []
         for path in self.artifacts.boundary.child("runs", run_id).glob("cover-*.json"):
-            value = json.loads(path.read_text())
+            value = json.loads(path.read_text(encoding="utf-8"))
             if value.get("approved_final_digest") == canonical_digest(approved) and value.get("style") == style and value.get("layout_version") == LAYOUT_VERSION:
                 image = Path(value["image_path"])
                 if image.is_file() and digest(image.read_bytes()) == value["image_sha256"]:
@@ -126,8 +126,8 @@ class CoverService:
     def save(self, run_id, candidate):
         directory = self.artifacts.boundary.child("runs", run_id)
         with (directory / ".cover.lock").open("a") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
-            return self._save(run_id, candidate, directory)
+            with exclusive_lock(lock):
+                return self._save(run_id, candidate, directory)
 
     def _save(self, run_id, candidate, directory):
         style = candidate.get("style")
@@ -157,7 +157,7 @@ class CoverService:
         raw = article.read_bytes() if article else None
         current = digest(raw) if raw is not None else canonical_digest(live)
         if record_path.exists():
-            record = json.loads(record_path.read_text())
+            record = json.loads(record_path.read_text(encoding="utf-8"))
             image = Path(record["image_path"])
             if not image.is_file() or digest(image.read_bytes()) != record["image_sha256"]:
                 raise ValueError("saved cover image changed or disappeared")
@@ -214,11 +214,12 @@ class CoverService:
             raise ValueError("cover image readback failed")
         atomic_write(record_path, (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode())
         if apply:
-            with article.open("rb") as article_lock:
-                fcntl.flock(article_lock, fcntl.LOCK_EX)
-                if digest(article.read_bytes()) != current:
-                    raise ValueError("article changed during cover save")
-                atomic_write(article, updated)
+            article_lock_path = article.with_name(f".{article.name}.content-gzh.lock")
+            with article_lock_path.open("a") as article_lock:
+                with exclusive_lock(article_lock):
+                    if digest(article.read_bytes()) != current:
+                        raise ValueError("article changed during cover save")
+                    atomic_write(article, updated)
             SaveService._verify_readback(approved, receipt["target"], self.adapter.read_back(receipt["target"]))
             result["applied"] = True
             atomic_write(record_path, (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode())

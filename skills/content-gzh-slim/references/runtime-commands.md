@@ -45,6 +45,6 @@ Scope fields (`audience_scope`, `usage_scope`, `maturity`, `source_verification`
 
 ## Optional single cover
 
-After a real saved Run, use `cover-context --run-id ... --style consulting|retro-ink|raster-tech [--store ...]` to read verified article and any existing same-style cover. The Host loads `content-gzh-cover` and the chosen style, calls the real image tool once, checks the image, then calls `save-cover --run-id ... --candidate <JSON> [--store ...]`. No command generates an image by itself. The candidate format lives in `content-gzh-cover/SKILL.md`.
+After a real saved Run, use `cover-context --run-id ... --style consulting|real-photo|retro-blueprint [--store ...]` to read verified article and any existing same-style cover. The Host loads `content-gzh-cover` and the chosen style, calls the real image tool once, checks the image, then calls `save-cover --run-id ... --candidate <JSON> [--store ...]`. No command generates an image by itself. The candidate format lives in `content-gzh-cover/SKILL.md`.
 
 The source adapter is derived from the same frozen Manifest; fixture-only Run access is limited to repository tests. `status` reports covers separately from the writing status. No extra writing Gate or cover state machine is added. Only the chosen style is generated; three-style testing is a developer activity, not the customer path. Feishu covers are local-only until remote image writing is implemented.

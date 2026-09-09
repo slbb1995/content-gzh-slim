@@ -4,10 +4,10 @@
   },
   "package": {
     "id": "content-gzh-slim",
-    "version": "1.1.0"
+    "version": "1.1.1"
   },
   "runtime": {
-    "file_count": 76,
+    "file_count": 77,
     "files": [
       {
         "bytes": 495,
@@ -45,9 +45,9 @@
         "sha256": "a41dcb0aff80ede8bb76120795a05a2104299a84307ee21777c30cbfb9f0bd81"
       },
       {
-        "bytes": 12401,
+        "bytes": 12563,
         "path": "runtime/cover.py",
-        "sha256": "0fa53ec314858a43747be2fad8e7f4f100105066ba5d0a3a5a328432e91ab46c"
+        "sha256": "cb5f7ff3a8db5dd0e62aa5f71d7ea5a4f53660e99d7df6f422e54b4316c6f3e1"
       },
       {
         "bytes": 6163,
@@ -73,6 +73,11 @@
         "bytes": 2465,
         "path": "runtime/feishu_adapter.py",
         "sha256": "59e64ceb60f88b05486eb9b9a61de201d56547a04ab11d2822d271f273aadacc"
+      },
+      {
+        "bytes": 841,
+        "path": "runtime/file_lock.py",
+        "sha256": "e897f7b50c5cfa1e04a1ca90902b9ab64b3ebd18e391e035b3493f53961b1256"
       },
       {
         "bytes": 3127,
@@ -110,9 +115,9 @@
         "sha256": "212dab7a2b9860a81393fa3ec52aec5260ae578b1f1835a0f83f804f2e1738d7"
       },
       {
-        "bytes": 5664,
+        "bytes": 5678,
         "path": "runtime/obsidian_adapter.py",
-        "sha256": "7f3ccab11155458c1e6c670d38ae0bfe6d114216fa4956e5bd8f2102d1fb5345"
+        "sha256": "c2eade5d807ba57a39542cfa75b59a1cbab249985559ee2d3c7b765c3ada574f"
       },
       {
         "bytes": 1554,
@@ -175,9 +180,9 @@
         "sha256": "98c3fb64f8a946d8c455a95662cddc3c7d60b76f74430d63fbb47c631b204c32"
       },
       {
-        "bytes": 7339,
+        "bytes": 7377,
         "path": "runtime/save_contract.py",
-        "sha256": "875e743173ecc3cd3444b79891ed9b2afa4314a7d41f77b6b96ecbc0b243b6f2"
+        "sha256": "f6b195b550e1578954e158859a403d7e6fcd555ca1603a8d64a2aa3d0ce7f5e5"
       },
       {
         "bytes": 4785,
@@ -315,9 +320,9 @@
         "sha256": "d51164cc43f88ba739c67ab7f26dcb96837e4c550775f6dd774cb9a5d3b5c6c8"
       },
       {
-        "bytes": 6246,
+        "bytes": 6843,
         "path": "skills/content-gzh-cover/SKILL.md",
-        "sha256": "6506dd13517ceebd2e3a20e1c77d518cafc12eae9ffe285d39f86e239ca07fd9"
+        "sha256": "73bf06c187d6f17acc1e7256bc08cdb3f4bad23448032536d9701b61389a601b"
       },
       {
         "bytes": 274,
@@ -330,14 +335,14 @@
         "sha256": "0e3346b2729d4631e6d8116322a462a2a3e3b71b957e3ea8255fcd5219103ae6"
       },
       {
-        "bytes": 740,
-        "path": "skills/content-gzh-cover/references/raster-tech.md",
-        "sha256": "537541814e4a54da1ece6fa92fc07dc7babe88b2074b3f6a2bbf2cc1ba01ad94"
+        "bytes": 1760,
+        "path": "skills/content-gzh-cover/references/real-photo.md",
+        "sha256": "9a65f011e9eb07d2053ae18c6cc8d444c3d3155b035c0252c2185ed2f6d87def"
       },
       {
-        "bytes": 721,
-        "path": "skills/content-gzh-cover/references/retro-ink.md",
-        "sha256": "6eca2950d408577c405eaf66f51d7f00f821150e79e25166a23032822952f63e"
+        "bytes": 2534,
+        "path": "skills/content-gzh-cover/references/retro-blueprint.md",
+        "sha256": "bf85161ef50c19944c39a0bb68f36e0fac532f82e4bb74effd5c294e903e27fe"
       },
       {
         "bytes": 1059,
@@ -360,14 +365,14 @@
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
       },
       {
-        "bytes": 6395,
+        "bytes": 6451,
         "path": "skills/content-gzh-slim/SKILL.md",
-        "sha256": "b46edddacb46668d2806b4afa1d3b764a26b76917e28b002b226a8b52dcea1dc"
+        "sha256": "67c954edb59c5b57faa5499c4971925b6f6664bf9091af6f6555b4ae45836a52"
       },
       {
-        "bytes": 5634,
+        "bytes": 5639,
         "path": "skills/content-gzh-slim/references/runtime-commands.md",
-        "sha256": "c6692d9ba41da239bcd113f76e49c0ab74b0685558c09dba75eee57c7d7001c3"
+        "sha256": "993d813d4341f6351dc3197dc86e009e54cb54f83041072c4dfec33530b9700e"
       },
       {
         "bytes": 2496,
@@ -400,7 +405,7 @@
       "content-gzh-slim",
       "content-gzh-writer"
     ],
-    "tree_sha256": "0ab0d7dcf0ca16386abe6dc89fa940b410493d810b9a952b65dceb26f2c7022d"
+    "tree_sha256": "0c548f7848e7cb6a18c379f430eead6c74cf7bbf7da9651a8558c2a2c7d77a6d"
   },
   "schema_version": "content-gzh-slim-release-v1"
 }
