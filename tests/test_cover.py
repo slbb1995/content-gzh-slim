@@ -61,10 +61,10 @@ class CoverTests(unittest.TestCase):
         self.assertEqual(len(self.service.context(self.run_id, 'consulting')['existing']), 1)
         DistributionService(self.root).generate(self.run_id, explicit_request='生成分发包', candidate=p6.read_json('p6_distribution.json'))
         self.assertEqual(self.store.load(self.run_id)['status'], 'distribution_optional')
-        self.service.context(self.run_id, 'retro-ink')
+        self.service.context(self.run_id, 'real-photo')
 
     def test_preview_three_independent_single_styles_does_not_write_article(self):
-        for style in ('consulting', 'retro-ink', 'raster-tech'):
+        for style in ('consulting', 'real-photo', 'retro-blueprint'):
             self.service.save(self.run_id, self.candidate(style, apply=False))
         folder = self.root/'runs'/self.run_id
         self.assertEqual(len(list(folder.glob('cover-*.png'))), 3)
@@ -83,7 +83,7 @@ class CoverTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'another approved'):
             self.service.save(self.run_id, self.candidate(approved_final_digest='0'*64))
         with self.assertRaises((ValueError, TypeError)):
-            self.service.save(self.run_id, self.candidate(style='consulting,retro-ink'))
+            self.service.save(self.run_id, self.candidate(style='consulting,real-photo'))
 
     def test_unsaved_run_cannot_generate(self):
         path = self.root/'runs'/self.run_id/'run.json'
@@ -193,7 +193,7 @@ class CoverTests(unittest.TestCase):
 
     def test_reusing_prior_style_applies_existing_image_without_new_version(self):
         first = self.service.save(self.run_id, self.candidate())['cover']
-        self.service.save(self.run_id, self.candidate('retro-ink'))
+        self.service.save(self.run_id, self.candidate('real-photo'))
         cached = self.service.context(self.run_id, 'consulting')['existing'][0]
         self.assertFalse(cached['currently_applied'])
         result = self.service.save(self.run_id, self.candidate(image_path=first['image_path']))

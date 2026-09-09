@@ -91,7 +91,7 @@ class ObsidianAdapter:
                 raise SaveAdapterError("Obsidian article name conflicts with different content")
             self.read_back({"object_ref": str(path)})
             return {"backend": self.backend, "object_ref": str(path), "created": False}
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
             handle.write(payload)
         return {"backend": self.backend, "object_ref": str(path), "created": True}
 

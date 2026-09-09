@@ -12,8 +12,8 @@ description: 为 Content 公众号 Slim 已保存的文章，按选定的一种�
 入口在询问是否需要封面时，一次列出三种文字选项，并根据文章推荐一种、给一句理由：
 
 1. 麦肯锡商业咨询：商业分析、方法论。
-2. 复古油墨极简：观点、经验。
-3. 光栅渐变科技：AI 工具、产品更新。
+2. 实拍写实杂志风：真实场景、实物现场。
+3. 复古图纸聚焦风：结构、系统、空间关系。
 
 用户选一种后直接生成。已指定风格不再询问；用户说“你选”“按你推荐”就按文章判断并完成；说不用就结束。不要把推荐当作用户已经同意。不要逐项确认 Prompt、短标题、构图或保存。
 
@@ -25,8 +25,8 @@ description: 为 Content 公众号 Slim 已保存的文章，按选定的一种�
 
 风格键和参考：
 - `consulting`：[麦肯锡商业咨询](references/consulting.md)
-- `retro-ink`：[复古油墨极简](references/retro-ink.md)
-- `raster-tech`：[光栅渐变科技](references/raster-tech.md)
+- `real-photo`：[实拍写实杂志风](references/real-photo.md)
+- `retro-blueprint`：[复古图纸聚焦风](references/retro-blueprint.md)
 
 现有 IP 的明确禁区从本 Run Context 读取；不借用其他账号的身份、事实、行业物件。无 IP 可以正常生成。
 
@@ -44,6 +44,14 @@ description: 为 Content 公众号 Slim 已保存的文章，按选定的一种�
 - 安全框只用于内部构图/预览，不画进最终图片；成品不得有 1:1 字样、边框或虚线。
 
 这是后台构图和看图要求，不新增用户确认步骤，也不默认多生一张图片。
+
+## 封面失败清单与反制
+
+组织提示词时逐条自查；命中一条就在提示词里写一句显式反制，不要只在心里规避。
+
+1. PPT / 课程封面感：画面像模板套壳。反制："an editorial magazine cover, NOT a slide template or course thumbnail."
+2. 信息图模板感：堆图标、图表、数据、流程。反制："no infographic elements, no charts, no icons, no data labels."
+3. 电商广告感：促销感、价格、标语、二维码。反制："no commercial-advertising feel, no price, no slogan, no QR code."
 
 ## 后台保存
 
