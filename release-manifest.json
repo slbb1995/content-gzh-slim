@@ -290,6 +290,11 @@
         "sha256": "ee2359d67899aff196b9259b6fa062988b4525459f15570511beed4c8c49b9d2"
       },
       {
+        "bytes": 1104,
+        "path": "skills/content-gzh-analyzer/SKILL.md",
+        "sha256": "96fcbdc2a2684fe54258818f0068a9fb7336e530b1cefc96f6c3cad30b1927fb"
+      },
+      {
         "bytes": 43,
         "path": "skills/content-gzh-analyzer/agents/openai.yaml",
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
@@ -300,9 +305,9 @@
         "sha256": "1f8655415a2394c021fab312a5c638db8d8e102283d01617b0088e3f0a6e9b6f"
       },
       {
-        "bytes": 1104,
-        "path": "skills/content-gzh-analyzer/SKILL.md",
-        "sha256": "96fcbdc2a2684fe54258818f0068a9fb7336e530b1cefc96f6c3cad30b1927fb"
+        "bytes": 988,
+        "path": "skills/content-gzh-context-retriever/SKILL.md",
+        "sha256": "551a5f0c2d3d61c99c3dbf4e2077e846273f4ba720e91ba48c4f85cf76ba3303"
       },
       {
         "bytes": 43,
@@ -315,9 +320,9 @@
         "sha256": "d51164cc43f88ba739c67ab7f26dcb96837e4c550775f6dd774cb9a5d3b5c6c8"
       },
       {
-        "bytes": 988,
-        "path": "skills/content-gzh-context-retriever/SKILL.md",
-        "sha256": "551a5f0c2d3d61c99c3dbf4e2077e846273f4ba720e91ba48c4f85cf76ba3303"
+        "bytes": 6843,
+        "path": "skills/content-gzh-cover/SKILL.md",
+        "sha256": "73bf06c187d6f17acc1e7256bc08cdb3f4bad23448032536d9701b61389a601b"
       },
       {
         "bytes": 274,
@@ -340,23 +345,13 @@
         "sha256": "bf85161ef50c19944c39a0bb68f36e0fac532f82e4bb74effd5c294e903e27fe"
       },
       {
-        "bytes": 6843,
-        "path": "skills/content-gzh-cover/SKILL.md",
-        "sha256": "73bf06c187d6f17acc1e7256bc08cdb3f4bad23448032536d9701b61389a601b"
-      },
-      {
-        "bytes": 43,
-        "path": "skills/content-gzh-distribution-pack/agents/openai.yaml",
-        "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
-      },
-      {
         "bytes": 1059,
         "path": "skills/content-gzh-distribution-pack/SKILL.md",
         "sha256": "1142c4518b88db6bcb46c685708103a5f0c7acf197ea0945f2b87e302f748cf6"
       },
       {
         "bytes": 43,
-        "path": "skills/content-gzh-headline/agents/openai.yaml",
+        "path": "skills/content-gzh-distribution-pack/agents/openai.yaml",
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
       },
       {
@@ -365,14 +360,24 @@
         "sha256": "1502e5f188825830ab33d69f4b0952c003b6044b179f1aa4d9ed59337a5e5a4f"
       },
       {
+        "bytes": 43,
+        "path": "skills/content-gzh-headline/agents/openai.yaml",
+        "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
+      },
+      {
+        "bytes": 6451,
+        "path": "skills/content-gzh-slim/SKILL.md",
+        "sha256": "67c954edb59c5b57faa5499c4971925b6f6664bf9091af6f6555b4ae45836a52"
+      },
+      {
         "bytes": 5639,
         "path": "skills/content-gzh-slim/references/runtime-commands.md",
         "sha256": "993d813d4341f6351dc3197dc86e009e54cb54f83041072c4dfec33530b9700e"
       },
       {
-        "bytes": 6395,
-        "path": "skills/content-gzh-slim/SKILL.md",
-        "sha256": "b46edddacb46668d2806b4afa1d3b764a26b76917e28b002b226a8b52dcea1dc"
+        "bytes": 2496,
+        "path": "skills/content-gzh-writer/SKILL.md",
+        "sha256": "24f9bc5f95227c342b5d8820b5f5326b12764376a5304b802be5c5ee8c1895fc"
       },
       {
         "bytes": 43,
@@ -388,11 +393,6 @@
         "bytes": 815,
         "path": "skills/content-gzh-writer/references/huati.md",
         "sha256": "97aa81017c1400e6d5a23140334dd315132d2b1ce443d79b8303238f73a6ab50"
-      },
-      {
-        "bytes": 2496,
-        "path": "skills/content-gzh-writer/SKILL.md",
-        "sha256": "24f9bc5f95227c342b5d8820b5f5326b12764376a5304b802be5c5ee8c1895fc"
       }
     ],
     "skill_count": 7,
@@ -405,7 +405,7 @@
       "content-gzh-slim",
       "content-gzh-writer"
     ],
-    "tree_sha256": "63cddb9c2ccd9abbaca29d1ffee2f1008f8222f0454cefb8305f7988f23380ad"
+    "tree_sha256": "0c548f7848e7cb6a18c379f430eead6c74cf7bbf7da9651a8558c2a2c7d77a6d"
   },
   "schema_version": "content-gzh-slim-release-v1"
 }

@@ -65,6 +65,8 @@ python3 install.py --activate
 
 验证失败就停止。安装器不会覆盖不同内容的现有包或同名 active Skill；更新前先比较并备份。
 
+1.1.1 的 Windows 兼容仍待完整验收：PR #7 提交者报告封面专项 16 项通过，但 Windows 全量 109 项测试仍有 12 failures / 7 errors，涉及换行与 Profile fixture 哈希、路径分隔符和符号链接权限；尚未逐项确认是否为新增回归。macOS 全量通过不代表 Windows 已通过，Windows 验证失败时不要跳过检查安装。
+
 首次手动配置一个兼容知识库：
 
 ```bash
@@ -80,7 +82,7 @@ python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识
 
 ## 仓库状态
 
-- Version：1.1.0
+- Version：1.1.1
 - Implementation：P8 主链 + `content-source-v1` + 单张封面
 - Skills：1 个公开入口 + 6 个内部 Skill
 - Human Gates：2
