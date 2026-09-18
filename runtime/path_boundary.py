@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
+import stat
+import os
+import sys
 
 
 class PathBoundaryError(ValueError):
@@ -11,13 +14,31 @@ class PathBoundaryError(ValueError):
 
 class PathBoundary:
     def __init__(self, root: str | Path) -> None:
-        self.root = Path(root).expanduser().resolve()
+        raw = Path(root).expanduser().absolute()
+        self._reject_links(raw)
+        self.root = raw.resolve()
+        self._reject_links(self.root)
+
+    @staticmethod
+    def _reject_links(path: Path) -> None:
+        for current in (path, *path.parents):
+            if current.is_symlink():
+                # macOS exposes these system-owned aliases in tempfile/image outputs.
+                aliases = {Path("/tmp"): "/private/tmp", Path("/var"): "/private/var"}
+                if sys.platform == "darwin" and current in aliases:
+                    target = os.readlink(current)
+                    if target in {aliases[current], aliases[current].lstrip("/")}:
+                        continue
+                raise PathBoundaryError("path contains a symlink or reparse point")
+            if (current.exists() and getattr(current.stat(), "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT):
+                raise PathBoundaryError("path contains a symlink or reparse point")
 
     def child(self, *parts: str) -> Path:
-        if not parts or any(not part or Path(part).is_absolute() for part in parts):
+        if not parts or any(not part or Path(part).is_absolute() or PurePosixPath(part).is_absolute() or PureWindowsPath(part).drive or chr(0) in part for part in parts):
             raise PathBoundaryError("artifact path must be relative to the RunStore root")
-        candidate = self.root.joinpath(*parts).resolve()
+        raw = self.root.joinpath(*parts)
+        self._reject_links(raw)
+        candidate = raw.resolve()
         if candidate != self.root and self.root not in candidate.parents:
             raise PathBoundaryError("artifact path escapes the RunStore root")
         return candidate
-

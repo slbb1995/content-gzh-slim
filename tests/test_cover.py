@@ -9,7 +9,7 @@ import zlib
 
 import test_p6_runtime as p6
 from runtime.artifact_store import ArtifactStore
-from runtime.cover import CoverService, atomic_write, png_size
+from runtime.cover import CoverService, atomic_write, inspect_images, png_size
 from runtime.distribution_service import DistributionService
 from runtime.obsidian_adapter import ObsidianAdapter, split_cover
 from runtime.save_service import SaveService
@@ -37,11 +37,27 @@ class CoverTests(unittest.TestCase):
         self.original = self.article.read_bytes()
         self.image = self.root/'fixture.png'
         self.image.write_bytes(fixture_png())
+        self.crop = self.root/'fixture-left-square.png'
+        from PIL import Image
+        with Image.open(self.image) as image:
+            image.crop((0, 0, image.height, image.height)).save(self.crop)
 
     def candidate(self, style='consulting', **updates):
         context = self.service.context(self.run_id, style)
         value = {key: context[key] for key in ('approved_final_digest', 'article_digest', 'style', 'layout_version')}
-        value.update(cover_title=context['title'], prompt='fixture prompt, not real generation', image_path=str(self.image), generator='fixture-only', visual_checked=True)
+        pixels = inspect_images(self.image, self.crop)
+        value.update(
+            cover_title=context['title'], prompt='fixture prompt, not real generation',
+            image_path=str(self.image), crop_path=str(self.crop), generator='imagegen',
+            visual_checked=True,
+            generation_evidence={'tool': 'imagegen', 'image_sha256': pixels['image_sha256'], 'trace_ref': 'fixture-generation'},
+            visual_evidence={
+                'wide_checked': True, 'crop_checked': True, 'all_text_readable': True,
+                'style_matches': True, 'image_sha256': pixels['image_sha256'],
+                'crop_pixels_sha256': pixels['crop_pixels_sha256'], 'reviewer': 'fixture',
+                'wide_trace_ref': 'fixture-wide', 'crop_trace_ref': 'fixture-crop',
+            },
+        )
         value.update(updates)
         return value
 
@@ -67,7 +83,7 @@ class CoverTests(unittest.TestCase):
         for style in ('consulting', 'real-photo', 'retro-blueprint'):
             self.service.save(self.run_id, self.candidate(style, apply=False))
         folder = self.root/'runs'/self.run_id
-        self.assertEqual(len(list(folder.glob('cover-*.png'))), 3)
+        self.assertEqual(len(list(folder.glob('cover-*.png'))), 6)
         self.assertEqual(len(list(folder.glob('cover-*.json'))), 3)
         self.assertEqual(self.article.read_bytes(), self.original)
 
@@ -87,8 +103,8 @@ class CoverTests(unittest.TestCase):
 
     def test_unsaved_run_cannot_generate(self):
         path = self.root/'runs'/self.run_id/'run.json'
-        value = json.loads(path.read_text()); value['status'] = 'waiting_final'
-        path.write_text(json.dumps(value))
+        value = json.loads(path.read_text(encoding='utf-8')); value['status'] = 'waiting_final'
+        path.write_text(json.dumps(value), encoding='utf-8')
         with self.assertRaisesRegex(ValueError, 'saved article'):
             self.service.context(self.run_id, 'consulting')
 

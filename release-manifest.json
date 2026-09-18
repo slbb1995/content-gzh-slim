@@ -4,10 +4,10 @@
   },
   "package": {
     "id": "content-gzh-slim",
-    "version": "1.1.1"
+    "version": "1.1.2"
   },
   "runtime": {
-    "file_count": 77,
+    "file_count": 80,
     "files": [
       {
         "bytes": 495,
@@ -30,9 +30,9 @@
         "sha256": "91adf1df82e1ea34f611a1337e7a8ff7a0b2cdf5d650be9cb7dc20e75ee71954"
       },
       {
-        "bytes": 59341,
+        "bytes": 62643,
         "path": "runtime/content_source.py",
-        "sha256": "191376fd43449ccec9b4dcfe3c4e9e4ea7d6f06d1d7d785c586f61056e345f50"
+        "sha256": "eb5200d4dc64ac0a656c7595c0cc38ca28444ada4c91b8bebef196ce2209a696"
       },
       {
         "bytes": 4856,
@@ -45,9 +45,14 @@
         "sha256": "a41dcb0aff80ede8bb76120795a05a2104299a84307ee21777c30cbfb9f0bd81"
       },
       {
-        "bytes": 12563,
+        "bytes": 20507,
         "path": "runtime/cover.py",
-        "sha256": "cb5f7ff3a8db5dd0e62aa5f71d7ea5a4f53660e99d7df6f422e54b4316c6f3e1"
+        "sha256": "3c6c88b0088f871b00757b7e3dc75fc46d31836eda60e2eccb929f0812b43d48"
+      },
+      {
+        "bytes": 728,
+        "path": "runtime/dependencies.py",
+        "sha256": "df808ea018f24f6a27bc555074bf33cc01f6d2f3a62465de6d2d9fe9e116c14b"
       },
       {
         "bytes": 6163,
@@ -105,9 +110,9 @@
         "sha256": "63f0ee8c701d624c1fae530de339a8741ba8bceeed724bf427f960d07e48362e"
       },
       {
-        "bytes": 18627,
+        "bytes": 20645,
         "path": "runtime/host_cli.py",
-        "sha256": "ecce9669cbf1495ef2d773dfa13d9ca5523987b77545a304139fa26fe3066840"
+        "sha256": "40a01fc527f7c1209b2f62bd15d14a46084b84280d6bf7c1c386253b52cba38f"
       },
       {
         "bytes": 7418,
@@ -115,9 +120,9 @@
         "sha256": "212dab7a2b9860a81393fa3ec52aec5260ae578b1f1835a0f83f804f2e1738d7"
       },
       {
-        "bytes": 5678,
+        "bytes": 5765,
         "path": "runtime/obsidian_adapter.py",
-        "sha256": "c2eade5d807ba57a39542cfa75b59a1cbab249985559ee2d3c7b765c3ada574f"
+        "sha256": "a67c53da10100518a9bdcc30c9b5b1038246df65f111238f888d013a3b819a86"
       },
       {
         "bytes": 1554,
@@ -150,9 +155,9 @@
         "sha256": "347793166afeeca26635b4c08494517182f9f9581565a67c7337886a6e8185dc"
       },
       {
-        "bytes": 831,
+        "bytes": 1974,
         "path": "runtime/path_boundary.py",
-        "sha256": "26f2cea242412478b2aecfcc02d9dd40e7a436ed74d43321d7a8486128dd64a8"
+        "sha256": "7680d024d7328994f1932a2d4a8b98474e9378e8e994fd72d6fb8c3f7c682704"
       },
       {
         "bytes": 2270,
@@ -180,9 +185,9 @@
         "sha256": "98c3fb64f8a946d8c455a95662cddc3c7d60b76f74430d63fbb47c631b204c32"
       },
       {
-        "bytes": 7377,
+        "bytes": 7431,
         "path": "runtime/save_contract.py",
-        "sha256": "f6b195b550e1578954e158859a403d7e6fcd555ca1603a8d64a2aa3d0ce7f5e5"
+        "sha256": "32dfbfad7f73a8f1d078b01abab6de88185187b467f47e0619c9b554b14739d7"
       },
       {
         "bytes": 4785,
@@ -223,6 +228,11 @@
         "bytes": 1663,
         "path": "schemas/content-source-manifest.schema.json",
         "sha256": "b6e72d724d9f02167288c6b76c0afb84fac69294406d47a19cc90127f94fcc26"
+      },
+      {
+        "bytes": 2569,
+        "path": "schemas/cover_candidate.schema.json",
+        "sha256": "855b2cb605e973f0bab8fc81004c72aba189a81b9c27689fa58fea39280184e2"
       },
       {
         "bytes": 990,
@@ -290,6 +300,11 @@
         "sha256": "ee2359d67899aff196b9259b6fa062988b4525459f15570511beed4c8c49b9d2"
       },
       {
+        "bytes": 523,
+        "path": "scripts/content-gzh-slim.cmd",
+        "sha256": "f5cd1f6d7623a483219cbb7cf170f3b0ad3a0a6a5a7969f0332dc2081fe51f96"
+      },
+      {
         "bytes": 1104,
         "path": "skills/content-gzh-analyzer/SKILL.md",
         "sha256": "96fcbdc2a2684fe54258818f0068a9fb7336e530b1cefc96f6c3cad30b1927fb"
@@ -320,14 +335,14 @@
         "sha256": "d51164cc43f88ba739c67ab7f26dcb96837e4c550775f6dd774cb9a5d3b5c6c8"
       },
       {
-        "bytes": 6843,
+        "bytes": 8560,
         "path": "skills/content-gzh-cover/SKILL.md",
-        "sha256": "73bf06c187d6f17acc1e7256bc08cdb3f4bad23448032536d9701b61389a601b"
+        "sha256": "0d5c0386f069a0df401bce7209ffbc3e06f6a5d9c7970cafe21d2785a0c578d9"
       },
       {
-        "bytes": 274,
+        "bytes": 317,
         "path": "skills/content-gzh-cover/agents/openai.yaml",
-        "sha256": "b51809c2e6b0f3d0e59c6d0496d4f3ab96d3e39022eea8ad4383e68f95708cd7"
+        "sha256": "7875b52b533a419f87745ba9122f323834ef885f5829ca85e5cac04baa713378"
       },
       {
         "bytes": 1203,
@@ -365,14 +380,14 @@
         "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
       },
       {
-        "bytes": 6451,
+        "bytes": 6571,
         "path": "skills/content-gzh-slim/SKILL.md",
-        "sha256": "67c954edb59c5b57faa5499c4971925b6f6664bf9091af6f6555b4ae45836a52"
+        "sha256": "08539e221a326752e91a2923580609d4e85546b28dad1a91c065300627628d38"
       },
       {
-        "bytes": 5639,
+        "bytes": 7243,
         "path": "skills/content-gzh-slim/references/runtime-commands.md",
-        "sha256": "993d813d4341f6351dc3197dc86e009e54cb54f83041072c4dfec33530b9700e"
+        "sha256": "ceaee5bdd8be1340f223a8e13c4482de69be02dfe77e641bac73af85d3b5103c"
       },
       {
         "bytes": 2496,
@@ -405,7 +420,7 @@
       "content-gzh-slim",
       "content-gzh-writer"
     ],
-    "tree_sha256": "0c548f7848e7cb6a18c379f430eead6c74cf7bbf7da9651a8558c2a2c7d77a6d"
+    "tree_sha256": "0ffb59dcd01faa921f99cc44f20a76b1452b0e0ee777b1379135955e35f5ee0d"
   },
   "schema_version": "content-gzh-slim-release-v1"
 }

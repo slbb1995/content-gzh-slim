@@ -20,6 +20,9 @@ def sha256(path: Path) -> str:
 
 
 def main() -> int:
+    sys.path.insert(0, str(ROOT))
+    from runtime.dependencies import require_cover_dependencies
+    require_cover_dependencies()
     manifest = json.loads((ROOT / "release-manifest.json").read_text(encoding="utf-8"))
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     if manifest.get("schema_version") != "content-gzh-slim-release-v1" or manifest.get("package") != {"id": "content-gzh-slim", "version": version}:
@@ -45,12 +48,17 @@ def main() -> int:
         raise RuntimeError(f"generated Python files found: {forbidden}")
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
+    env["PYTHONUTF8"] = "1"
     tests = subprocess.run([sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests"], cwd=ROOT, env=env, capture_output=True, text=True)
     if tests.returncode != 0:
         raise RuntimeError("tests failed:\n" + tests.stdout + tests.stderr)
     cli = subprocess.run([sys.executable, "-B", str(ROOT / "scripts" / "content-gzh-slim"), "--help"], cwd=ROOT, env=env, capture_output=True, text=True)
     if cli.returncode != 0 or "content-gzh-slim installed-host runtime" not in cli.stdout:
         raise RuntimeError("CLI smoke test failed")
+    if os.name == "nt":
+        windows_cli = subprocess.run(["cmd", "/d", "/c", str(ROOT / "scripts" / "content-gzh-slim.cmd"), "--help"], cwd=ROOT, env=env, capture_output=True, text=True)
+        if windows_cli.returncode != 0 or "content-gzh-slim installed-host runtime" not in windows_cli.stdout:
+            raise RuntimeError("Windows CLI smoke test failed")
     print(f"PASS: Content 公众号 Slim {version}, 7 skills / {len(files)} deliverable files verified.")
     return 0
 

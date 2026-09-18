@@ -41,7 +41,16 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 
 def _emit(value: dict[str, Any]) -> None:
-    print(json.dumps(value, ensure_ascii=False, sort_keys=True))
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    encoding = sys.stdout.encoding or "utf-8"
+    try:
+        payload.encode(encoding)
+    except UnicodeEncodeError:
+        # Windows hosts may expose a GBK stdout even though lark-cli and the
+        # source documents are UTF-8. JSON escapes preserve every code point
+        # while keeping the command machine-readable on that console.
+        payload = json.dumps(value, ensure_ascii=True, sort_keys=True)
+    print(payload)
 
 
 def _bundle_root() -> Path:
@@ -66,6 +75,8 @@ def _start_or_resume(args: argparse.Namespace) -> tuple[dict[str, Any], Path, bo
         )
         result = RunStore(store).create_or_resume(task, knowledge_base, ip)
         return result.run, args.catalog, result.created
+    if args.retrieval_plan is None:
+        raise ContentSourceError("real start requires the pinned plan returned by preview-sources")
     task, knowledge_base, ip, catalog, snapshot = resolve_real_source(
         raw,
         registry_path=args.registry,
@@ -121,25 +132,31 @@ def _derived_adapter(store: Path, run_id: str, *, identity: str, verify_sources:
 
 
 def _probe() -> dict[str, Any]:
+    from .dependencies import require_cover_dependencies
+    dependencies = require_cover_dependencies()
     root = _bundle_root()
     manifest_path = root / "PACKAGE-MANIFEST.json"
     manifest = _read_json(manifest_path)
     files = manifest.get("files")
     if not isinstance(files, dict) or not files:
         raise ValueError("package manifest contains no files")
+    from .path_boundary import PathBoundary
+    boundary = PathBoundary(root)
     for relative, expected in files.items():
-        path = root / relative
+        path = boundary.child(relative)
         if not path.is_file():
             raise ValueError(f"package file is missing: {relative}")
         actual = hashlib.sha256(path.read_bytes()).hexdigest()
         if actual != expected:
             raise ValueError(f"package checksum mismatch: {relative}")
-    skill_root = root / ".agents" / "skills"
+    skill_root = boundary.child(manifest.get("skill_root", ".agents/skills"))
     names = sorted(path.parent.name for path in skill_root.glob("*/SKILL.md"))
-    if names != sorted(manifest.get("skills", [])):
+    required = sorted(("content-gzh-slim", "content-gzh-analyzer", "content-gzh-context-retriever", "content-gzh-writer", "content-gzh-headline", "content-gzh-distribution-pack", "content-gzh-cover"))
+    if names != required or names != sorted(manifest.get("skills", [])):
         raise ValueError("installed skill list differs from package manifest")
     return {
         "status": "ready",
+        "dependencies": dependencies,
         "package": manifest.get("package"),
         "source_revision": manifest.get("source_revision"),
         "skills": names,
@@ -252,6 +269,7 @@ def build_parser() -> argparse.ArgumentParser:
     status = commands.add_parser("status")
     status.add_argument("--run-id", required=True)
     status.add_argument("--store", type=Path)
+    status.add_argument("--identity", choices=("user", "bot"), default="user")
     return parser
 
 
@@ -327,6 +345,7 @@ def main() -> int:
                 }
             )
         elif args.command == "prepare-gate-b":
+            _verify_real_run(_store(args), args.run_id, identity="user")
             result = P4Pipeline(_store(args)).run_initial(
                 args.run_id,
                 args.draft_output.read_text(encoding="utf-8"),
@@ -377,14 +396,25 @@ def main() -> int:
             else:
                 result = service.save(args.run_id, _read_json(args.candidate))
                 result["cover"].pop("previous_document", None)
+                result["delivery"] = service.delivery_status(args.run_id)
+                result["remote_inserted"] = False
                 _emit(result)
         elif args.command == "status":
             run = RunStore(_store(args)).load(args.run_id)
+            delivery = {"complete": False, "cover_required": True, "reason": "article_not_saved"}
+            if run["status"] in {"saved", "distribution_optional"}:
+                if _real_snapshot(_store(args), args.run_id) is None:
+                    delivery["reason"] = "real_source_snapshot_required"
+                else:
+                    adapters = _derived_adapter(_store(args), args.run_id, identity=args.identity, verify_sources=False)
+                    backend = run["knowledge_base_identity"]["backend"]
+                    delivery = CoverService(_store(args), adapters[backend]).delivery_status(args.run_id)
             _emit(
                 {
                     "run_id": args.run_id,
                     "status": run["status"],
                     "gate_count": len(run.get("gate_approvals", [])),
+                    "delivery": delivery,
                     "covers": [{key: value.get(key) for key in ("style", "image_path", "applied")}
                                for path in ArtifactStore(_store(args)).boundary.child("runs", args.run_id).glob("cover-*.json")
                                for value in [_read_json(path)]],
@@ -393,7 +423,7 @@ def main() -> int:
                 }
             )
         return 0
-    except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError, RuntimeError, ImportError, json.JSONDecodeError) as exc:
         print(f"content-gzh-slim failed: {exc}", file=sys.stderr)
         return 2
 

@@ -9,13 +9,13 @@ description: 为 Content 公众号 Slim 已保存的文章，按选定的一种�
 
 ## 交互
 
-入口在询问是否需要封面时，一次列出三种文字选项，并根据文章推荐一种、给一句理由：
+入口在选择封面风格时，一次列出三种文字选项，并根据文章推荐一种、给一句理由：
 
 1. 麦肯锡商业咨询：商业分析、方法论。
 2. 实拍写实杂志风：真实场景、实物现场。
 3. 复古图纸聚焦风：结构、系统、空间关系。
 
-用户选一种后直接生成。已指定风格不再询问；用户说“你选”“按你推荐”就按文章判断并完成；说不用就结束。不要把推荐当作用户已经同意。不要逐项确认 Prompt、短标题、构图或保存。
+封面是整单必选交付。用户选一种后直接生成。已指定风格不再询问；用户说“你选”“按你推荐”就按文章判断并完成。用户取消则停止、保留已保存文章并明确整单未完成，不强制生成。不要把推荐当作用户已经同意；不新增第三个写作Gate，写入仍遵守宿主实际授权。
 
 ## 连续完成
 
@@ -69,11 +69,32 @@ description: 为 Content 公众号 Slim 已保存的文章，按选定的一种�
   "prompt": "实际提交给图片工具的完整提示词",
   "image_path": "图片工具返回的实际本地 PNG 路径",
   "generator": "实际图片工具名",
-  "visual_checked": true
+  "crop_path": "同一PNG左侧实际H×H裁图路径",
+  "visual_checked": true,
+  "generation_evidence": {
+    "tool": "与generator一致的实际工具名",
+    "trace_ref": "实际工具回执或可定位的会话引用",
+    "image_sha256": "实际横图字节SHA256"
+  },
+  "visual_evidence": {
+    "reviewer": "实际看图的宿主",
+    "wide_trace_ref": "横图实际查看回执或会话引用",
+    "crop_trace_ref": "同图方裁实际查看回执或会话引用",
+    "wide_checked": true,
+    "crop_checked": true,
+    "all_text_readable": true,
+    "style_matches": true,
+    "image_sha256": "实际横图字节SHA256",
+    "crop_pixels_sha256": "同图左方裁RGBA像素SHA256"
+  }
 }
 ```
 
 `layout_version` 使用 cover-context 返回的原值；旧布局图片不自动复用。只有实际看过横图及同图左侧 1:1 裁切、确认全部标题完整且可读后，才填写 `visual_checked: true`。Host 填写文字无法替代真实工具调用和看图。普通任务没有数组或三风格比较参数。
+
+输入字段见包内 `schemas/cover_candidate.schema.json`；`runtime.cover.inspect_images` 提供实际文件/像素摘要。Runtime保留远端可读尺寸要求（宽至少900、高至少380、比例与2.35差不超过0.035），额外核验单帧、不透明和同图精确裁切。证据引用与视觉结论是宿主声明，不能伪造工具标识；宿主不提供call ID时填写真实回执/会话引用。旧call_id字段仅兼容实际存在的标识。
+
+原生imagegen可能先写`~/.codex/generated_images`，save-cover之后才写RunStore及Manifest知识库目录；二者授权分别核对，最终保存目录不能控制原生工具首次落盘。`cover-context`保留远端`existing`数组并新增`unverified_existing`，缺少新证据的旧图不能冒充已验收，可在真实看图与裁切后补齐输入重新保存；无需另行生图。只有`status.delivery.complete=true`才可称整单交付完成。
 
 Obsidian 默认写回；先核对目标库附件规则，必要时提供 `asset_directory`（必须在同一库内）。已有 `A.系统/附件` 时保存到该目录；否则默认同文章目录配图文件夹。仅预览时设置 `apply: false`。原文已被手改、目录越界或现有图片冲突时停止，不覆盖。
 

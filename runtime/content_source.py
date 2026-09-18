@@ -48,6 +48,14 @@ def _canonical(value: Any) -> bytes:
     return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
 
 
+def _lark_command(binary: str, arguments: list[str], *, platform: str | None = None) -> list[str]:
+    """Build a process command without asking Windows to open a launcher file."""
+    if (platform or os.name) == "nt" and binary.lower().endswith((".cmd", ".bat")):
+        command = subprocess.list2cmdline([binary, *arguments])
+        return [os.environ.get("ComSpec", r"C:\\Windows\\System32\\cmd.exe"), "/d", "/s", "/c", command]
+    return [binary, *arguments]
+
+
 def _digest(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
@@ -86,6 +94,8 @@ def _no_credentials(value: Any) -> None:
 
 
 def _read_regular(path: Path) -> tuple[bytes, str]:
+    from .path_boundary import PathBoundary
+    PathBoundary(path.parent).child(path.name)
     if path.is_symlink() or not path.is_file():
         raise ContentSourceError(f"source is not a regular file: {path}")
     raw = path.read_bytes()
@@ -212,6 +222,7 @@ class LarkContentSourceClient:
     @staticmethod
     def _json(output: str) -> dict[str, Any]:
         decoder = json.JSONDecoder()
+        fallback: dict[str, Any] | None = None
         for index, character in enumerate(output):
             if character != "{":
                 continue
@@ -220,25 +231,48 @@ class LarkContentSourceClient:
             except json.JSONDecodeError:
                 continue
             if isinstance(value, dict):
+                # lark-cli may print a standalone update/skills notice before
+                # the actual response envelope. Prefer the envelope instead of
+                # accepting the first JSON object found in stdout.
                 data = value.get("data", value)
-                return data if isinstance(data, dict) else value
+                if "ok" in value or "data" in value:
+                    return data if isinstance(data, dict) else value
+                fallback = value
+        if fallback is not None:
+            return fallback
         raise ContentSourceError("lark-cli returned no JSON object")
 
     def _call(self, arguments: list[str]) -> dict[str, Any]:
         completed = subprocess.run(
-            [self.binary, "--as", self.identity, "--format", "json", *arguments],
+            _lark_command(self.binary, ["--as", self.identity, "--format", "json", *arguments]),
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         if completed.returncode != 0:
             raise ContentSourceError(f"lark-cli read failed: {(completed.stderr or completed.stdout).strip()}")
         return self._json(completed.stdout)
 
+    def _call_text(self, arguments: list[str]) -> str:
+        completed = subprocess.run(
+            _lark_command(self.binary, ["--as", self.identity, "--format", "json", *arguments]),
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        if completed.returncode != 0:
+            raise ContentSourceError(f"lark-cli read failed: {(completed.stderr or completed.stdout).strip()}")
+        return completed.stdout
+
     def fetch_markdown(self, object_ref: str) -> str:
-        document = self._call(["docs", "+fetch", "--api-version", "v2", "--doc", object_ref, "--doc-format", "markdown", "--detail", "simple"]).get("document", {})
-        content = document.get("content") if isinstance(document, dict) else None
-        if not isinstance(content, str) or not content.strip():
+        content = self._call_text([
+            "docs", "+fetch", "--api-version", "v2", "--doc", object_ref,
+            "--doc-format", "markdown", "--detail", "simple",
+            "--jq", ".data.document.content",
+        ])
+        if not content.strip():
             raise ContentSourceError("Feishu document contains no Markdown")
         return content.replace("\r\n", "\n").strip() + "\n"
 
@@ -287,6 +321,14 @@ def _json_from_markdown(text: str) -> dict[str, Any]:
 
 def _split_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    # Feishu Markdown exports may put the document H1 before frontmatter.
+    # Accept only one leading H1 plus blank lines; never scan arbitrary body
+    # text for a later delimiter.
+    heading = re.match(r"^(#[ \t]+[^\n]+)\n(?:[ \t]*\n)*(?=---\n)", normalized)
+    prefix = ""
+    if heading:
+        prefix = heading.group(1) + "\n\n"
+        normalized = normalized[heading.end():]
     if not normalized.startswith("---\n"):
         return {}, normalized
     end = normalized.find("\n---\n", 4)
@@ -311,7 +353,8 @@ def _split_frontmatter(text: str) -> tuple[dict[str, Any], str]:
         else:
             metadata[key] = value
             active = None
-    return metadata, normalized[end + 5 :]
+    body = normalized[end + 5 :]
+    return metadata, prefix + body.lstrip("\n") if prefix else body
 
 
 def _scalar(raw: str) -> Any:
@@ -416,15 +459,15 @@ def _select_binding(registry: dict[str, Any], requested: str | None) -> dict[str
 
 
 def _safe_obsidian_path(vault: Path, relative: str) -> Path:
-    root = vault.resolve(strict=True)
-    current = root
-    for part in PurePosixPath(_relative(relative, "object_ref")).parts:
-        current /= part
-        if current.is_symlink():
-            raise ContentSourceError("Obsidian source path contains a symlink")
-    resolved = current.resolve(strict=True)
-    resolved.relative_to(root)
-    return resolved
+    from .path_boundary import PathBoundary
+    boundary = PathBoundary(vault)
+    path = Path(relative)
+    if path.is_absolute():
+        try:
+            relative = path.relative_to(boundary.root).as_posix()
+        except ValueError as exc:
+            raise ContentSourceError("absolute source reference leaves the selected vault") from exc
+    return boundary.child(_relative(relative, "object_ref")).resolve(strict=True)
 
 
 def _search_score(title: str, keywords: list[str], query: str) -> int:
@@ -457,16 +500,17 @@ def _source_prohibited(metadata: dict[str, Any]) -> bool:
 def _source_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     keys = ("type", "status", "applicable_workflows", "method_kind", "content_purposes",
             "use_when", "avoid_when", "usage_boundary", "usage_policy", "audience_scope",
-            "usage_scope", "maturity", "source_verification", "claim_scope", "fact_status", "do_not_use")
+            "usage_scope", "maturity", "source_verification", "claim_scope", "fact_status", "do_not_use",
+            "source_id", "source_ids", "knowledge_id", "category_id", "sha256",
+            "compiled_source_versions", "topics", "updated")
     return {key: metadata[key] for key in keys if key in metadata}
 
 
 def _business_fact_status(metadata: dict[str, Any]) -> str:
     """Source identity verification is not verification of current client facts."""
-    if metadata.get("status", "confirmed") not in {"active", "confirmed"}:
+    if metadata.get("status") != "confirmed":
         return "candidate"
-    # Keep missing-field legacy behavior, while honoring explicit stable metadata.
-    # Do not infer this from the article body or the words used in its title.
+    # Active/missing status and a matching source hash do not confirm client facts.
     requires_check = {
         "usage_scope": {"reference_with_fact_check", "reference_only", "internal_reference", "source_only", "candidate"},
         "maturity": {"requires_current_fact_check", "experimental_reference", "reference_only", "candidate", "unverified"},
@@ -492,7 +536,11 @@ def _content_role(metadata: dict[str, Any]) -> str | None:
     workflows = metadata.get("applicable_workflows", [])
     if not isinstance(workflows, list) or (workflows and WORKFLOW not in workflows):
         return None
-    if metadata.get("type") in {"benchmark_deconstruction", "peer_content_asset"}:
+    if metadata.get("type") in {
+        "benchmark_deconstruction",
+        "peer_content_asset",
+        "viral_template_deconstruction",
+    }:
         return "peer"
     if metadata.get("type") == "content_method_asset" and WORKFLOW in workflows:
         return "method"
@@ -574,9 +622,17 @@ def _feishu_inventory(client: LarkContentSourceClient, *, space_id: str, parent_
     while queue:
         parent, depth = queue.pop(0)
         if parent in visited:
-            continue
+            raise ContentSourceError("Feishu source tree repeats a node")
         visited.add(parent)
+        if depth >= 6:
+            raise ContentSourceError("Feishu discovery exceeds six child levels")
         for node in client.list_children(space_id=space_id, parent_node_token=parent):
+            if node.get("space_id") not in {None, space_id}:
+                raise ContentSourceError("Feishu source node belongs to another space")
+            if (node.get("node_type") in {1, "shortcut"}
+                    or node.get("origin_node_token") not in {None, "", node.get("node_token")}
+                    or node.get("origin_space_id") not in {None, "", space_id}):
+                raise ContentSourceError("Feishu shortcut is not a same-library source")
             if len(nodes) >= 200:
                 raise ContentSourceError("Feishu discovery exceeds 200 nodes; narrow the configured root")
             nodes.append(node)
@@ -642,7 +698,14 @@ def _asset_catalog(documents: list[tuple[str, str, str]], *, backend: str, role:
         ref = _stable_ref(backend, object_ref, digest)
         objects.append({"backend": backend, "object_ref": object_ref, "content_sha256": digest})
         if role == "03":
-            business.append({"ref": ref, "title": title, "keywords": _keywords(metadata, title), "excerpt": _excerpt(body), "fact_status": _business_fact_status(metadata), "content_sha256": digest, "source_metadata": _source_metadata(metadata)})
+            if metadata.get("type") not in {"business_knowledge_asset", "property_knowledge_page"}:
+                raise ContentSourceError("selected 03 object is not business knowledge")
+            workflows = metadata.get("applicable_workflows", [])
+            if workflows and (not isinstance(workflows, list) or WORKFLOW not in workflows):
+                raise ContentSourceError("selected 03 object does not support this workflow")
+            if not body.strip() or len(body) > 24000:
+                raise ContentSourceError("selected 03 asset is empty or exceeds 24000 characters")
+            business.append({"ref": ref, "title": title, "keywords": _keywords(metadata, title), "excerpt": body.strip(), "fact_status": _business_fact_status(metadata), "content_sha256": digest, "source_metadata": _source_metadata(metadata)})
             continue
         content_role = _content_role(metadata)
         if content_role == "peer":
