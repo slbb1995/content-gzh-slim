@@ -59,13 +59,26 @@ IP 解析顺序：本次明确指定 → 已确认的公众号默认 → primary
 ```bash
 git clone https://github.com/slbb1995/content-gzh-slim.git
 cd content-gzh-slim
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -B tools/verify.py
-.venv/bin/python -B install.py --codex-home /明确授权的隔离根 --activate
+python3 -m venv ../.content-gzh-venv
+export CONTENT_GZH_PYTHON="$PWD/../.content-gzh-venv/bin/python"
+"$CONTENT_GZH_PYTHON" -m pip install -r requirements.txt
+"$CONTENT_GZH_PYTHON" -B tools/verify.py
+"$CONTENT_GZH_PYTHON" -B install.py --codex-home /明确授权的隔离根 --activate
 ```
 
-封面需要 Pillow>=10。上面的依赖只安装到当前项目的 `.venv`，不修改全局 Python；后续运行也使用该虚拟环境的 Python 调用 `scripts/content-gzh-slim`。Windows 将 `.venv/bin/python` 换成 `.venv\Scripts\python.exe`。安装器、发布检查和 `probe` 都会检查当前解释器中的依赖，缺失时在写入前停止。
+封面需要 Pillow>=10。虚拟环境放在仓库外的 `../.content-gzh-venv`，避免其缓存混入交付树检查，也不修改全局 Python。后续安装、验证和运行始终使用同一个 `CONTENT_GZH_PYTHON`；macOS/Linux 用 `"$CONTENT_GZH_PYTHON" -B /完整包/bin/content-gzh-slim ...` 调用已安装包。
+
+Windows PowerShell 在克隆并进入仓库后使用：
+
+```powershell
+py -3 -m venv ..\.content-gzh-venv
+$env:CONTENT_GZH_PYTHON = (Resolve-Path ..\.content-gzh-venv\Scripts\python.exe).Path
+& $env:CONTENT_GZH_PYTHON -m pip install -r requirements.txt
+& $env:CONTENT_GZH_PYTHON -B tools/verify.py
+& $env:CONTENT_GZH_PYTHON -B install.py --codex-home 'C:\明确授权的隔离根' --activate
+```
+
+Windows 后续调用完整包的 `bin\content-gzh-slim.cmd` 时保留该环境变量；新终端需重新设置为同一虚拟环境的 Python。安装器、发布检查和 `probe` 都会检查当前解释器中的依赖，缺失时在写入前停止。
 
 验证失败就停止。安装器不会覆盖不同内容的现有包或同名 active Skill；更新前先比较并备份。
 
@@ -74,8 +87,8 @@ Windows 兼容性需要在实际使用环境中确认；安装检查未通过时
 首次手动配置一个兼容知识库：
 
 ```bash
-python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识库
-python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识库 --confirmation 上一步返回值
+"$CONTENT_GZH_PYTHON" -B scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识库
+"$CONTENT_GZH_PYTHON" -B scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识库 --confirmation 上一步返回值
 ```
 
 飞书把 `--knowledge-base` 换成明确的飞书知识空间 URL。可用 `--default-profile 名称` 选择默认 IP，或用 `--default-no-ip` 明确配置无 IP；二者不能同时使用。第一次只返回 `wrote=false` 预览，确认后才登记。
