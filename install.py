@@ -153,6 +153,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--package-name", default="content-gzh-slim-main")
     parser.add_argument("--activate", action="store_true")
     args = parser.parse_args(argv)
+    from runtime.dependencies import require_cover_dependencies
+    require_cover_dependencies()
     if args.build_output:
         _build(args.build_output)
         return 0

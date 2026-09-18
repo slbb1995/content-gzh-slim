@@ -20,6 +20,9 @@ def sha256(path: Path) -> str:
 
 
 def main() -> int:
+    sys.path.insert(0, str(ROOT))
+    from runtime.dependencies import require_cover_dependencies
+    require_cover_dependencies()
     manifest = json.loads((ROOT / "release-manifest.json").read_text(encoding="utf-8"))
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     if manifest.get("schema_version") != "content-gzh-slim-release-v1" or manifest.get("package") != {"id": "content-gzh-slim", "version": version}:

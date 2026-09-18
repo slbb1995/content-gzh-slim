@@ -59,9 +59,13 @@ IP 解析顺序：本次明确指定 → 已确认的公众号默认 → primary
 ```bash
 git clone https://github.com/slbb1995/content-gzh-slim.git
 cd content-gzh-slim
-python3 tools/verify.py
-python3 -B install.py --codex-home /明确授权的隔离根 --activate
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -B tools/verify.py
+.venv/bin/python -B install.py --codex-home /明确授权的隔离根 --activate
 ```
+
+封面需要 Pillow>=10。上面的依赖只安装到当前项目的 `.venv`，不修改全局 Python；后续运行也使用该虚拟环境的 Python 调用 `scripts/content-gzh-slim`。Windows 将 `.venv/bin/python` 换成 `.venv\Scripts\python.exe`。安装器、发布检查和 `probe` 都会检查当前解释器中的依赖，缺失时在写入前停止。
 
 验证失败就停止。安装器不会覆盖不同内容的现有包或同名 active Skill；更新前先比较并备份。
 

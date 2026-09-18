@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import stat
+import os
+import sys
 
 
 class PathBoundaryError(ValueError):
@@ -15,11 +17,20 @@ class PathBoundary:
         raw = Path(root).expanduser().absolute()
         self._reject_links(raw)
         self.root = raw.resolve()
+        self._reject_links(self.root)
 
     @staticmethod
     def _reject_links(path: Path) -> None:
         for current in (path, *path.parents):
-            if current.is_symlink() or (current.exists() and getattr(current.stat(), "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT):
+            if current.is_symlink():
+                # macOS exposes these system-owned aliases in tempfile/image outputs.
+                aliases = {Path("/tmp"): "/private/tmp", Path("/var"): "/private/var"}
+                if sys.platform == "darwin" and current in aliases:
+                    target = os.readlink(current)
+                    if target in {aliases[current], aliases[current].lstrip("/")}:
+                        continue
+                raise PathBoundaryError("path contains a symlink or reparse point")
+            if (current.exists() and getattr(current.stat(), "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT):
                 raise PathBoundaryError("path contains a symlink or reparse point")
 
     def child(self, *parts: str) -> Path:

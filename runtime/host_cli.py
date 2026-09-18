@@ -132,6 +132,8 @@ def _derived_adapter(store: Path, run_id: str, *, identity: str, verify_sources:
 
 
 def _probe() -> dict[str, Any]:
+    from .dependencies import require_cover_dependencies
+    dependencies = require_cover_dependencies()
     root = _bundle_root()
     manifest_path = root / "PACKAGE-MANIFEST.json"
     manifest = _read_json(manifest_path)
@@ -154,6 +156,7 @@ def _probe() -> dict[str, Any]:
         raise ValueError("installed skill list differs from package manifest")
     return {
         "status": "ready",
+        "dependencies": dependencies,
         "package": manifest.get("package"),
         "source_revision": manifest.get("source_revision"),
         "skills": names,
