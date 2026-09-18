@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -53,7 +53,7 @@ def validate_target_preview(
         raise SaveContractError("save target was not a frozen preview")
     if not isinstance(target_ref, str) or not target_ref.strip() or "\x00" in target_ref:
         raise SaveContractError("save target ref is invalid")
-    if target_ref.startswith(("/", "\\")) or Path(target_ref).is_absolute():
+    if target_ref.startswith(("/", "\\")) or Path(target_ref).is_absolute() or PureWindowsPath(target_ref).drive:
         raise SaveContractError("absolute save target refs are forbidden")
     parts = [part for part in urlsplit(target_ref).path.split("/") if part]
     if ".." in parts:

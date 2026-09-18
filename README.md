@@ -2,7 +2,7 @@
 
 `content-gzh-slim` 是一套可独立安装、面向多知识库和多 IP 的微信公众号内容工作流。
 
-当前版本在 P8 已验收主链上增加 `content-source-v1`：可从明确输入或经过真人确认的公共 Registry 解析 Obsidian/飞书知识库，选择同库任意 active IP，并在 Gate A 后冻结、回读和校验所有来源。ZSK、口播和公众号仍是三个独立产品，不存在运行时代码依赖。
+通过 `content-source-v1`，可从明确输入或经过真人确认的公共 Registry 解析 Obsidian/飞书知识库，选择同库任意 active IP，并在 Gate A 后冻结、回读和校验所有来源。ZSK、口播和公众号是三个独立产品，不存在运行时代码依赖。
 
 ## 一段想法也能开始
 
@@ -29,7 +29,7 @@ Agent 负责选材，客户无需先找对标或选择结构卡。04 同行材�
 - Gate A 后 Manifest、Profile 索引、03、04、05、Registry 或显式参考发生变化，会保留旧产物并停止。
 - 主链只有两次真人确认：方向、正文与标题。
 - Writer 只读取一份唯一 Article Context Pack。
-- 正文确认后保存回本次指定知识库；单张封面和全平台分发包是可选支线。
+- 正文确认后保存回本次指定知识库；完整交付必须包含一张所选风格封面，分发包仍是可选支线。取消封面则停止并报告未完成。
 - 现役 `shu-gongzhonghao-v1` 只作为冻结对照组，不在本仓库修改。
 
 ## 与 ZSK、口播的关系
@@ -54,18 +54,18 @@ ZSK 负责建库、入库与维护资料；公众号只读取经过 Manifest 授
 
 IP 解析顺序：本次明确指定 → 已确认的公众号默认 → primary → 唯一 active → 要求选择。`无IP` 只能明确指定或明确配置。
 
-## 安装与验证
+## 安装与环境检查
 
 ```bash
 git clone https://github.com/slbb1995/content-gzh-slim.git
 cd content-gzh-slim
 python3 tools/verify.py
-python3 install.py --activate
+python3 -B install.py --codex-home /明确授权的隔离根 --activate
 ```
 
 验证失败就停止。安装器不会覆盖不同内容的现有包或同名 active Skill；更新前先比较并备份。
 
-1.1.1 的 Windows 兼容仍待完整验收：PR #7 提交者报告封面专项 16 项通过，但 Windows 全量 109 项测试仍有 12 failures / 7 errors，涉及换行与 Profile fixture 哈希、路径分隔符和符号链接权限；尚未逐项确认是否为新增回归。macOS 全量通过不代表 Windows 已通过，Windows 验证失败时不要跳过检查安装。
+Windows 兼容性需要在实际使用环境中确认；安装检查未通过时，请停止安装并保留错误信息。
 
 首次手动配置一个兼容知识库：
 
@@ -82,7 +82,7 @@ python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识
 
 ## 仓库状态
 
-- Version：1.1.1
+- Version：1.1.2
 - Implementation：P8 主链 + `content-source-v1` + 单张封面
 - Skills：1 个公开入口 + 6 个内部 Skill
 - Human Gates：2
@@ -93,7 +93,7 @@ python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识
 
 [MIT License](LICENSE)
 
-## 可选封面
+## 必选单张封面
 
 文章保存后，一次性用文字介绍三种风格并按本篇推荐一种；用户选择或委托后，由 `content-gzh-cover` 生成一张并保存。支持麦肯锡商业咨询、实拍写实杂志风、复古图纸聚焦风。已指定风格无需再次选择，不新增正文 Gate。Obsidian 支持封面写回；飞书仅生成本地封面，不自动插入飞书文章。
 
@@ -101,4 +101,6 @@ python3 scripts/content-gzh-slim configure --knowledge-base /绝对路径/知识
 
 生图需要当前宿主的 `imagegen` Skill 和实际图片工具；Runtime 负责已有文章绑定、保存和回读，不声称能自行生图。缺少生图能力时停止对应环节。安装应使用完整包，不单独复制封面 Skill。
 
-独立隔离验收已实跑知识库读取、两次合成确认、正文保存、一次真实生图、封面写回与重复保存；测试保持正文及原 Run 文件不变。另已复现并修复特殊附件路径的写前校验与保存中断后的图片复用问题。上述合成验收不等于真实客户生产批准，不包含飞书远端插图或真实 WorkBuddy 宿主验收。
+## 跨平台启动
+
+POSIX 保留可执行的 `bin/content-gzh-slim`（shebang 启动器）。Windows 安装包提供 `bin/content-gzh-slim.cmd`，它只将参数转发给同一 Python 启动器，不依赖或创建文件关联。自动化和 Runtime 内部调用统一使用 `[sys.executable, "-B", str(launcher), ...]`；不要硬编码某个 `python.exe` 路径，也不要在 Windows 直接打开无扩展名启动器。

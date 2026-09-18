@@ -60,17 +60,18 @@ class P7RuntimeTests(unittest.TestCase):
             manifest = json.loads(
                 (candidate / "PACKAGE-MANIFEST.json").read_text(encoding="utf-8")
             )
+            launcher = candidate / "bin" / ("content-gzh-slim.cmd" if sys.platform == "win32" else "content-gzh-slim")
             probe = subprocess.run(
-                [str(candidate / "bin" / "content-gzh-slim"), "probe"],
+                (["cmd", "/d", "/c", str(launcher), "probe"] if sys.platform == "win32" else [str(launcher), "probe"]),
                 check=False,
                 capture_output=True,
                 text=True,
             )
             installed = project / ".agents" / "skills"
-            installed_is_symlink = installed.is_symlink()
+            installed_is_directory = installed.is_dir() and not installed.is_symlink()
 
         self.assertEqual(probe.returncode, 0, probe.stderr)
-        self.assertTrue(installed_is_symlink)
+        self.assertTrue(installed_is_directory)
         self.assertEqual(len(manifest["skills"]), 7)
         self.assertFalse(manifest["credentials_included"])
         self.assertFalse(manifest["customer_data_included"])
@@ -115,13 +116,13 @@ class P7RuntimeTests(unittest.TestCase):
     def test_bundled_launcher_smokes_full_fixture_chain_to_isolated_obsidian(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             candidate, _ = self._build(temporary)
-            launcher = candidate / "bin" / "content-gzh-slim"
+            launcher = candidate / "bin" / ("content-gzh-slim.cmd" if sys.platform == "win32" else "content-gzh-slim")
             store = Path(temporary) / "runs"
             task = FIXTURES / "p2_task.json"
             catalog = FIXTURES / "p2_catalog.json"
 
             start = subprocess.run(
-                [str(launcher), "start", "--input", str(task), "--catalog", str(catalog), "--store", str(store)],
+                (["cmd", "/d", "/c", str(launcher), "start", "--input", str(task), "--catalog", str(catalog), "--store", str(store)] if sys.platform == "win32" else [str(launcher), "start", "--input", str(task), "--catalog", str(catalog), "--store", str(store)]),
                 check=True,
                 capture_output=True,
                 text=True,

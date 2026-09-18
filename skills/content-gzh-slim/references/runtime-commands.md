@@ -1,10 +1,13 @@
 # Installed runtime commands
 
-Resolve the candidate root as the directory three levels above this Skill folder, then use its single launcher:
+Resolve the known package layout: a self-contained copied public Skill has `bin/` beside its SKILL.md; a nested `.agents/skills/content-gzh-slim` resolves three levels upward. Both platform wrappers forward to the same Python launcher.
 
 ```text
-<candidate-root>/bin/content-gzh-slim
+POSIX:   <candidate-root>/bin/content-gzh-slim
+Windows: <candidate-root>\bin\content-gzh-slim.cmd
 ```
+
+On Windows, use the `.cmd` shim for an interactive shell. In Python-hosted calls on every platform, invoke the shared launcher explicitly as `[sys.executable, "-B", str(launcher), ...]`; never ask Windows to open the extensionless POSIX launcher and never create a file association.
 
 The Host owns all backend access and AI outputs. `--store` is optional and defaults to the current host's persistent Content 公众号 Slim Runs directory.
 
@@ -43,8 +46,12 @@ Scope fields (`audience_scope`, `usage_scope`, `maturity`, `source_verification`
 `writing_requirements` in the existing input object is an optional string list of editorial instructions. The frozen task carries it inside the sole Context; it is never a second packet and never a verbatim `must_keep` requirement. Existing inputs without this field retain their prior normalized identity.
 
 
-## Optional single cover
+## Required single cover
 
 After a real saved Run, use `cover-context --run-id ... --style consulting|real-photo|retro-blueprint [--store ...]` to read verified article and any existing same-style cover. The Host loads `content-gzh-cover` and the chosen style, calls the real image tool once, checks the image, then calls `save-cover --run-id ... --candidate <JSON> [--store ...]`. No command generates an image by itself. The candidate format lives in `content-gzh-cover/SKILL.md`.
 
 The source adapter is derived from the same frozen Manifest; fixture-only Run access is limited to repository tests. `status` reports covers separately from the writing status. No extra writing Gate or cover state machine is added. Only the chosen style is generated; three-style testing is a developer activity, not the customer path. Feishu covers are local-only until remote image writing is implemented.
+
+Both cover commands route only to `runtime.cover.CoverService` and retain the upstream result shapes (`existing` array / `cover` object). The candidate adds actual `crop_path`, generation/viewing trace references and file/pixel bindings; see `schemas/cover_candidate.schema.json`. Legacy records without these bindings are listed as `unverified_existing`, not accepted as completed. A cancelled or skipped cover leaves `delivery.complete=false`; `saved` and `distribution_optional` alone never complete delivery. `status --identity user|bot` may read back the saved remote article to verify its current binding. Exact image dimensions remain the upstream near-2.35 ratio and minimum900×380, while full opacity and actual left-square pixels are independently checked.
+
+03 requires explicit `status: confirmed` plus no reference-only/unverified restrictions to support confirmed facts; active or missing status is candidate material. Selected03 and04 bodies are preserved in full up to24000 characters, with oversize refusal. This is stricter than the upstream legacy active03 default and must be reviewed before using older libraries.

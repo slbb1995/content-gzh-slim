@@ -1,11 +1,11 @@
 ---
 name: content-gzh-slim
-description: Start, resume, configure, or inspect one Content 公众号 Slim Run from an explicit or confirmed-default Obsidian/Feishu knowledge base and any active IP or none; coordinate bounded 05→03→04 retrieval, two human Gates, verified save, optional single-style cover and distribution. Never publish.
+description: Start, resume, configure, or inspect one Content 公众号 Slim Run from an explicit or confirmed-default Obsidian/Feishu knowledge base and any active IP or none; coordinate bounded 05→03→04 retrieval, two human Gates, verified save, required single-style cover and optional distribution. Never publish.
 ---
 
 # Content GZH Slim
 
-Use this as the only public entry. It orchestrates one deterministic Run and delegates analysis, Context selection, body writing, headline generation, optional cover generation, and optional distribution to the six internal Skills.
+Use this as the only public entry. It orchestrates one deterministic Run and delegates analysis, Context selection, body writing, headline generation, required cover generation, and optional distribution to the six internal Skills.
 
 ## Input and default resolution
 
@@ -26,7 +26,7 @@ Use this as the only public entry. It orchestrates one deterministic Run and del
 7. After the user selects an option when needed and replies exactly `确认方向`, record the approval and invoke `content-gzh-context-retriever` once. Runtime creates exactly one `article_context_v1.json`.
 8. Invoke `content-gzh-writer` with only that Context, then `content-gzh-headline` with the same Context and current draft. Show Gate B and stop.
 9. Before P3 and save, re-read Registry, Manifest, Profile index, selected source objects and explicit references. Any hash change stops while preserving artifacts. Only after Gate B save to the Manifest-derived target and verify readback.
-10. End the writing chain at `saved`. Offer an optional cover in one message: list 麦肯锡商业咨询 (`consulting`) / 实拍写实杂志风 (`real-photo`) / 复古图纸聚焦风 (`retro-blueprint`), recommend one with an article-specific reason, and allow skipping. A selection generates one image via `content-gzh-cover`; do not show three candidates or ask for Prompt, short-title or save approval. Reuse an explicit style or delegated choice without asking again. Keep this outside the two writing Gates.
+10. Article save ends at `saved`; full delivery requires a verified cover. Offer one style selection: 麦肯锡商业咨询 (`consulting`) / 实拍写实杂志风 (`real-photo`) / 复古图纸聚焦风 (`retro-blueprint`), with an article-specific recommendation. A selection generates one image via `content-gzh-cover`; reuse an explicit style or delegated choice without asking again. Cancellation stops generation and leaves delivery incomplete. Keep exactly two writing Gates; honor actual filesystem authorization and confirm completion using `status.delivery.complete`.
 11. Only an exact later request `生成分发包` may invoke `content-gzh-distribution-pack`; it still does not publish.
 
 The Run freezes one knowledge base, one selected IP or `none`, the task input, source hashes, Manifest revision and reference set. Changing the selected IP creates a different Run even when both Profiles belong to the same knowledge base.
@@ -42,6 +42,6 @@ The state machine contains exactly two human waiting states: `waiting_direction`
 - Keep source snapshots, Run artifacts, and client idempotency state outside this Git repository.
 - The Writer reads one Context Pack and performs zero knowledge-base searches. Do not call a Reviewer, quality checker, old Writer, or title arbitration chain.
 - Limited or unavailable IP material never blocks the Run, but must be disclosed; do not invent personal facts, cases, outcomes, or numbers.
-- Initial article save is create-only and must pass remote or local readback. Optional Obsidian cover writeback may add only the managed image and metadata while preserving the approved article; original Gate and save receipts stay immutable. Saved never means draft box or published.
+- Initial article save is create-only and must pass remote or local readback. Required Obsidian cover writeback may add only the managed image and metadata while preserving the approved article; original Gate and save receipts stay immutable. Saved is an article state and does not prove complete delivery, draft box or publication.
 - Do not call ZSK at runtime. ZSK may produce the shared file contract; this Skill only reads it.
 - Do not copy credentials into the candidate, replace `shu-gongzhonghao-v1`, enter a draft box, or publish.

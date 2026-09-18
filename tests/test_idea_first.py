@@ -144,7 +144,10 @@ class IdeaFirstTests(unittest.TestCase):
         for metadata in ("", "status: active\n", "status: confirmed\n"):
             text = "---\ntype: business_knowledge_asset\n" + metadata + "---\n# 核验指南\n词语 reference_only 或 candidate 出现在说明正文不代表元数据状态。"
             business, *_ = _asset_catalog([("03/legacy.md", text, "c" * 64)], backend="obsidian", role="03")
-            self.assertEqual(business[0]["fact_status"], "confirmed")
+            self.assertEqual(
+                business[0]["fact_status"],
+                "confirmed" if metadata == "status: confirmed\n" else "candidate",
+            )
 
     def test_preview_plan_pins_material_task_manifest_and_profile(self):
         for target in ("peer", "method", "business", "manifest", "profile_index", "profile", "task", "chosen_ip", "reference"):

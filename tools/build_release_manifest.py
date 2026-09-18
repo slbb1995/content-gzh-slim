@@ -28,7 +28,7 @@ def files() -> list[dict[str, object]]:
     paths: list[Path] = []
     for root_name in ("runtime", "schemas", "skills"):
         paths.extend(path for path in (ROOT / root_name).rglob("*") if path.is_file())
-    paths.append(ROOT / "scripts" / "content-gzh-slim")
+    paths.extend((ROOT / "scripts" / "content-gzh-slim", ROOT / "scripts" / "content-gzh-slim.cmd"))
     result = []
     for path in sorted(set(paths)):
         if path.name == "__pycache__" or path.suffix in {".pyc", ".pyo"} or path.is_symlink():

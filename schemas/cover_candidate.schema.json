@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CoverCandidateV1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["approved_final_digest", "article_digest", "style", "layout_version", "cover_title", "prompt", "image_path", "crop_path", "generator", "visual_checked", "generation_evidence", "visual_evidence"],
+  "properties": {
+    "approved_final_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "article_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "style": {"enum": ["consulting", "real-photo", "retro-blueprint"]},
+    "layout_version": {"const": "wide-balanced-square-v2"},
+    "cover_title": {"type": "string", "minLength": 1},
+    "prompt": {"type": "string", "minLength": 1},
+    "image_path": {"type": "string", "minLength": 1},
+    "crop_path": {"type": "string", "minLength": 1},
+    "generator": {"enum": ["image_gen.imagegen", "image_gen__imagegen", "imagegen", "openai-image-cli"]},
+    "visual_checked": {"const": true},
+    "apply": {"type": "boolean"},
+    "asset_directory": {"type": "string", "minLength": 1},
+    "generation_evidence": {
+      "type": "object", "required": ["tool", "image_sha256"],
+      "anyOf": [{"required": ["trace_ref"]}, {"required": ["call_id"]}],
+      "properties": {
+        "tool": {"type": "string", "minLength": 1},
+        "image_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "trace_ref": {"type": "string", "minLength": 1},
+        "call_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "visual_evidence": {
+      "type": "object", "required": ["reviewer", "wide_checked", "crop_checked", "all_text_readable", "style_matches", "image_sha256", "crop_pixels_sha256"],
+      "allOf": [{"anyOf": [{"required": ["wide_trace_ref"]}, {"required": ["wide_view_call_id"]}]}, {"anyOf": [{"required": ["crop_trace_ref"]}, {"required": ["crop_view_call_id"]}]}],
+      "properties": {
+        "reviewer": {"type": "string", "minLength": 1},
+        "wide_trace_ref": {"type": "string", "minLength": 1},
+        "crop_trace_ref": {"type": "string", "minLength": 1},
+        "wide_view_call_id": {"type": "string", "minLength": 1},
+        "crop_view_call_id": {"type": "string", "minLength": 1},
+        "wide_checked": {"const": true}, "crop_checked": {"const": true},
+        "all_text_readable": {"const": true}, "style_matches": {"const": true},
+        "image_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "crop_pixels_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

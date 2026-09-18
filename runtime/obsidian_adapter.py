@@ -96,7 +96,9 @@ class ObsidianAdapter:
         return {"backend": self.backend, "object_ref": str(path), "created": True}
 
     def read_back(self, target: dict[str, Any]) -> dict[str, Any]:
-        path = Path(target.get("object_ref", "")).resolve()
+        raw_path = Path(target.get("object_ref", ""))
+        PathBoundary(raw_path.parent).child(raw_path.name)
+        path = raw_path.resolve()
         if path != self.boundary.root and self.boundary.root not in path.parents:
             raise SaveAdapterError("Obsidian readback escaped the injected root")
         try:
