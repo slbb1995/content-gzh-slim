@@ -1,4 +1,4 @@
-"""P4 orchestration for versioned bodies, Top 3 headlines, and Gate B."""
+"""P4 orchestration for versioned bodies, one to three headlines, and Gate B."""
 
 from __future__ import annotations
 

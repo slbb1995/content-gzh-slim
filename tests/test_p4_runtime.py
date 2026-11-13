@@ -132,10 +132,10 @@ class P4RuntimeTests(unittest.TestCase):
 
         self.assertEqual(result["draft"], body.strip())
 
-    def test_headline_contract_requires_exact_top3_and_recommended_member(self) -> None:
+    def test_headline_contract_requires_bounded_candidates_and_recommended_member(self) -> None:
         invalid_candidates = []
         two = self._headlines()
-        two["top3"] = two["top3"][:2]
+        two["top3"] = two["top3"][:0]
         invalid_candidates.append(two)
         off_list = self._headlines()
         off_list["recommended"] = "第四个标题"
@@ -149,6 +149,18 @@ class P4RuntimeTests(unittest.TestCase):
                 run_id, _ = self._context_ready_run(temporary)
                 with self.assertRaises(HeadlineContractError):
                     P4Pipeline(temporary).run_initial(run_id, self._draft(), candidate)
+
+    def test_existing_title_can_be_the_only_candidate_and_still_waits_for_approval(self) -> None:
+        candidate = self._headlines()
+        candidate["top3"] = candidate["top3"][:1]
+        candidate["recommended"] = candidate["top3"][0]["title"]
+        with tempfile.TemporaryDirectory() as temporary:
+            run_id, store = self._context_ready_run(temporary)
+            result = P4Pipeline(temporary).run_initial(run_id, self._draft(), candidate)
+            self.assertEqual(len(result["headline"]["top3"]), 1)
+            self.assertEqual(result["headline"]["recommended"], candidate["recommended"])
+            self.assertEqual(store.load(run_id)["status"], "waiting_final")
+            self.assertFalse((Path(temporary) / "runs" / run_id / "approved_final.json").exists())
 
     def test_gate_b_decision_is_fail_closed(self) -> None:
         self.assertEqual(classify_gate_b_decision("确认正文和标题"), "approve")

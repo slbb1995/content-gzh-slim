@@ -182,7 +182,9 @@ def validate_profile_index(value: Any, knowledge_base_id: str) -> dict[str, Any]
     aliases: dict[str, str] = {}
     primary = 0
     for profile in value["profiles"]:
-        fields = {"profile_id", "display_name", "aliases", "object_ref", "status", "is_primary", "content_sha256"}
+        fields = {"profile_id", "display_name", "aliases", "object_ref", "status", "is_primary"}
+        directory_profile = isinstance(profile, dict) and profile.get("source_kind") == "profile_directory_v1"
+        fields |= {"source_kind", "profile_files"} if directory_profile else {"content_sha256"}
         if not isinstance(profile, dict) or set(profile) != fields:
             raise ContentSourceError("Profile index entry fields are invalid")
         profile_id = profile["profile_id"]
@@ -195,7 +197,21 @@ def validate_profile_index(value: Any, knowledge_base_id: str) -> dict[str, Any]
             raise ContentSourceError("Profile display name is invalid")
         if not isinstance(profile["aliases"], list) or any(not isinstance(alias, str) or not alias.strip() for alias in profile["aliases"]):
             raise ContentSourceError("Profile aliases are invalid")
-        if not isinstance(profile["object_ref"], str) or not profile["object_ref"].strip() or not HEX64.fullmatch(str(profile["content_sha256"])):
+        if not isinstance(profile["object_ref"], str) or not profile["object_ref"].strip():
+            raise ContentSourceError("Profile object ref or hash is invalid")
+        if directory_profile:
+            files = profile["profile_files"]
+            roles = {"persona", "style", "business", "editorial", "headline", "examples", "visual"}
+            if not isinstance(files, dict) or not {"persona", "style"}.issubset(files) or set(files) - roles:
+                raise ContentSourceError("directory Profile requires persona/style and known document roles")
+            if any(not isinstance(relative, str) for relative in files.values()):
+                raise ContentSourceError("directory Profile file paths must be strings")
+            if len(set(files.values())) != len(files):
+                raise ContentSourceError("directory Profile documents must have distinct paths")
+            for relative in files.values():
+                if not _relative(relative, "profile_files").endswith(".md"):
+                    raise ContentSourceError("directory Profile documents must be Markdown")
+        elif not HEX64.fullmatch(str(profile["content_sha256"])):
             raise ContentSourceError("Profile object ref or hash is invalid")
         if profile["status"] == "active":
             primary += int(profile["is_primary"])
@@ -442,20 +458,89 @@ def _select_profile(index: dict[str, Any], requested: str | None, configured: An
     raise ContentSourceError("multiple active IP Profiles require an explicit selection")
 
 
-def _select_binding(registry: dict[str, Any], requested: str | None) -> dict[str, Any]:
+def _binding_matches(binding: dict[str, Any], requested: str) -> bool:
+    if requested in {binding["binding_id"], binding["client_id"], binding["knowledge_base_id"],
+                     binding["locator"].get("vault_root"), binding["locator"].get("knowledge_base_ref")}:
+        return True
+    path = Path(requested).expanduser()
+    return (binding["backend"] == "obsidian" and path.is_absolute() and not path.is_symlink()
+            and str(path.resolve()) == binding["locator"].get("vault_root"))
+
+
+def _select_binding(registry: dict[str, Any], requested: str | None, requested_ip: str | None = None) -> dict[str, Any]:
     active = [binding for binding in registry["bindings"].values() if binding["status"] == "active" and WORKFLOW in binding["supported_workflows"]]
     if requested:
-        matches = [binding for binding in active if requested in {binding["binding_id"], binding["client_id"], binding["knowledge_base_id"], *binding["locator"].values()}]
+        matches = [binding for binding in active if _binding_matches(binding, requested)]
+        if len(matches) > 1:
+            if requested_ip and requested_ip not in {"none", "无IP"}:
+                matches = _bindings_for_ip(matches, requested_ip)
+            else:
+                default_id = registry["workflow_defaults"].get(WORKFLOW)
+                matches = [item for item in matches if item["binding_id"] == default_id]
         if len(matches) != 1:
             raise ContentSourceError("knowledge base does not resolve to one content-gzh-slim binding")
         return matches[0]
     default_id = registry["workflow_defaults"].get(WORKFLOW)
     matches = [binding for binding in active if binding["binding_id"] == default_id]
     if len(matches) == 1:
+        default = matches[0]
+        if requested_ip and requested_ip not in {"none", "无IP"} and default["backend"] == "obsidian":
+            same_vault = [item for item in active if item["backend"] == "obsidian" and item["locator"].get("vault_root") == default["locator"].get("vault_root")]
+            if len(same_vault) > 1:
+                matched = _bindings_for_ip(same_vault, requested_ip)
+                if len(matched) != 1:
+                    raise ContentSourceError("IP does not resolve to one binding in the selected vault")
+                return matched[0]
         return matches[0]
     if len(active) == 1:
         return active[0]
     raise ContentSourceError("multiple or zero knowledge-base bindings require an explicit selection")
+
+
+def _bindings_for_ip(bindings: list[dict[str, Any]], requested: str) -> list[dict[str, Any]]:
+    """Read only indexes inside the already selected vault, never other clients' prose."""
+    matched = []
+    for binding in bindings:
+        if binding["backend"] != "obsidian":
+            continue
+        path = _safe_obsidian_path(Path(binding["locator"]["vault_root"]), binding["profile_index_ref"])
+        index, _ = _read_json(path)
+        validate_profile_index(index, binding["knowledge_base_id"])
+        if _select_profile(index, requested, None) is not None:
+            matched.append(binding)
+    return matched
+
+
+def _directory_profile(vault: Path, profile: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    """Read declared original documents live; freeze every member hash per Run."""
+    root = _safe_obsidian_path(vault, profile["object_ref"])
+    if not root.is_dir():
+        raise ContentSourceError("directory Profile root is not a directory")
+    documents, objects = [], []
+    names = {profile["display_name"].casefold(), *(name.casefold() for name in profile["aliases"])}
+    for role, relative in sorted(profile["profile_files"].items()):
+        path = _safe_obsidian_path(vault, (root.relative_to(vault) / relative).as_posix())
+        if root not in path.parents:
+            raise ContentSourceError("Profile document leaves its selected directory")
+        raw, digest = _read_regular(path)
+        metadata, body = _split_frontmatter(raw.decode("utf-8"))
+        if str(metadata.get("profile", "")).casefold() not in names:
+            raise ContentSourceError("Profile document belongs to a different or unidentified IP")
+        if metadata.get("status") not in {"approved", "confirmed"} or _source_prohibited(metadata):
+            raise ContentSourceError("Profile document is not an approved author document")
+        if not body.strip() or len(body) > 24000:
+            raise ContentSourceError("Profile document is empty or exceeds 24000 characters")
+        object_ref = path.relative_to(vault).as_posix()
+        documents.append({"role": role, "object_ref": object_ref, "content_sha256": digest,
+                          "text": body.strip(), "status": "author_profile",
+                          "usage_boundary": "Author rules and source statements; preserve pending/current-fact qualifications. Examples are expression evidence, not new personal events."})
+        objects.append({"backend": "obsidian", "object_ref": object_ref, "content_sha256": digest})
+    if sum(len(item["text"]) for item in documents) > 64000:
+        raise ContentSourceError("selected Profile documents exceed 64000 characters; narrow optional roles")
+    ref = _stable_ref("obsidian", profile["profile_id"], _digest(_canonical(objects)))
+    return {"name": profile["display_name"], "ref": ref, "status": "full",
+            "anchors": {"identity": profile["display_name"]}, "confirmed_fragments": [],
+            "profile_documents": documents}, objects
 
 
 def _safe_obsidian_path(vault: Path, relative: str) -> Path:
@@ -569,6 +654,8 @@ def _obsidian_inventory(vault: Path, relative_root: str) -> list[dict[str, Any]]
 
 
 def _obsidian_documents(vault: Path, relative_root: str, *, query: str, limit: int, content: bool = False, selected: list[str] | None = None) -> list[tuple[str, str, str]]:
+    if selected == []:
+        return []
     root = _safe_obsidian_path(vault, relative_root)
     if not root.is_dir():
         raise ContentSourceError("Manifest asset root is not a directory")
@@ -738,6 +825,8 @@ def resolve_real_source(
         raise ContentSourceError("task input must be an object")
     requested_kb = raw_task.get("knowledge_base")
     requested_ip = raw_task.get("ip")
+    if isinstance(requested_ip, str):
+        requested_ip = requested_ip.strip() or None
     registry_file = Path(registry_path) if registry_path else default_registry_path()
     registry = None
     registry_digest = None
@@ -746,8 +835,10 @@ def resolve_real_source(
         registry, registry_digest = _read_json(registry_file)
         validate_registry(registry)
         try:
-            binding = _select_binding(registry, requested_kb if isinstance(requested_kb, str) and requested_kb.strip() else None)
+            binding = _select_binding(registry, requested_kb if isinstance(requested_kb, str) and requested_kb.strip() else None, requested_ip)
         except ContentSourceError:
+            if isinstance(requested_kb, str) and any(_binding_matches(item, requested_kb) for item in registry["bindings"].values()):
+                raise  # A registered but ambiguous/invalid binding must not fall back to another manifest.
             if not (
                 isinstance(requested_kb, str)
                 and (Path(requested_kb).is_absolute() or requested_kb.startswith("https://"))
@@ -838,7 +929,12 @@ def resolve_real_source(
         profile_objects = []
     else:
         canonical_ip = profile["display_name"]
-        if backend == "obsidian":
+        if profile.get("source_kind") == "profile_directory_v1":
+            if backend != "obsidian":
+                raise ContentSourceError("directory Profiles require an Obsidian binding")
+            payload, profile_objects = _directory_profile(vault, profile)
+            resolved_profile_ref = payload["ref"]
+        elif backend == "obsidian":
             profile_path = _safe_obsidian_path(vault, profile["object_ref"])
             raw_profile, actual_hash = _read_regular(profile_path)
             profile_text = raw_profile.decode("utf-8")
@@ -847,12 +943,13 @@ def resolve_real_source(
             profile_text = client.fetch_markdown(profile["object_ref"])
             actual_hash = _digest(profile_text.encode("utf-8"))
             profile_object_ref = profile["object_ref"]
-        if actual_hash != profile["content_sha256"]:
-            raise ContentSourceError("selected Profile hash differs from the Profile index")
-        resolved_profile_ref = _stable_ref(backend, profile_object_ref, actual_hash)
-        payload = _profile_payload(profile, profile_text, resolved_profile_ref)
+        if profile.get("source_kind") != "profile_directory_v1":
+            if actual_hash != profile["content_sha256"]:
+                raise ContentSourceError("selected Profile hash differs from the Profile index")
+            resolved_profile_ref = _stable_ref(backend, profile_object_ref, actual_hash)
+            payload = _profile_payload(profile, profile_text, resolved_profile_ref)
+            profile_objects = [{"backend": backend, "object_ref": profile_object_ref, "content_sha256": actual_hash}]
         profile_catalog = [payload]
-        profile_objects = [{"backend": backend, "object_ref": profile_object_ref, "content_sha256": actual_hash}]
         ip_identity = {"requested_name": canonical_ip, "resolved_ref": resolved_profile_ref, "status": payload["status"], "profile_id": profile["profile_id"]}
 
     if discover_only:
@@ -983,6 +1080,11 @@ def resolve_real_source(
         "save_target_ref": save_target_ref,
         "objects": [*profile_objects, *objects_03, *objects_04, *reference_objects],
     }
+    if binding["locator"].get("timezone"):
+        from zoneinfo import ZoneInfo
+        ZoneInfo(binding["locator"]["timezone"])
+        snapshot["output_timezone"] = binding["locator"]["timezone"]
+    snapshot["catalog_sha256"] = _digest(_canonical(catalog))
     if retrieval_plan is not None:
         # Pin the material seen during semantic selection, not just its current path.
         # These fields also bind a preview to the concrete Profile and task analyzed.
@@ -1074,6 +1176,8 @@ def plan_configuration(
     lark_identity: str = "user",
     default_profile: str | None = None,
     default_no_ip: bool = False,
+    manifest_ref: str | None = None,
+    timezone: str | None = None,
 ) -> dict[str, Any]:
     """Prepare a zero-write Registry binding for one already compatible knowledge base."""
 
@@ -1081,13 +1185,17 @@ def plan_configuration(
     path = Path(raw).expanduser()
     if path.is_absolute() and path.is_dir() and not path.is_symlink():
         vault = path.resolve(strict=True)
-        manifest_ref = MANIFEST_RELATIVE
+        manifest_ref = manifest_ref or MANIFEST_RELATIVE
         manifest, _manifest_hash = _read_json(_safe_obsidian_path(vault, manifest_ref))
         validate_manifest(manifest)
         profile_ref = manifest["profile_index_ref"]
         index, _index_hash = _read_json(_safe_obsidian_path(vault, profile_ref))
         validate_profile_index(index, manifest["knowledge_base_id"])
         locator = {"vault_root": str(vault)}
+        if timezone:
+            from zoneinfo import ZoneInfo
+            ZoneInfo(timezone)
+            locator["timezone"] = timezone
     elif raw.startswith("https://"):
         client = LarkContentSourceClient(binary=lark_binary, identity=lark_identity)
         manifest_ref, profile_ref = _feishu_contract_refs(client, raw)
@@ -1171,6 +1279,8 @@ def apply_configuration(
     lark_identity: str = "user",
     default_profile: str | None = None,
     default_no_ip: bool = False,
+    manifest_ref: str | None = None,
+    timezone: str | None = None,
 ) -> dict[str, Any]:
     plan = plan_configuration(
         knowledge_base,
@@ -1179,6 +1289,8 @@ def apply_configuration(
         lark_identity=lark_identity,
         default_profile=default_profile,
         default_no_ip=default_no_ip,
+        manifest_ref=manifest_ref,
+        timezone=timezone,
     )
     if confirmation != plan["confirmation"]:
         raise ContentSourceError("confirmation does not match the current zero-write preview")

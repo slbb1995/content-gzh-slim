@@ -1,3 +1,5 @@
+> Local candidate 1.2.0-local.2: preserves full reference text and live directory Profiles; sharpens audience recognition, local revision and evidence-backed contact routes within the existing analysis/writing steps. One to three title candidates, existing state/save boundaries and the seven-Skill budget remain. No publication is implied by this local version.
+
 # Content GZH Slim
 
 `content-gzh-slim` 是一套可独立安装、面向多知识库和多 IP 的微信公众号内容工作流。

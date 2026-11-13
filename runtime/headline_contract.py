@@ -8,7 +8,7 @@ from .approved_direction import canonical_digest
 
 
 class HeadlineContractError(ValueError):
-    """Raised when headline output exceeds the Top 3 contract."""
+    """Raised when headline output violates the bounded candidate contract."""
 
 
 _CANDIDATE_FIELDS = {"diagnosis", "top3", "recommended"}
@@ -32,8 +32,8 @@ def build_headline_artifact(
     if not all(isinstance(value, str) and value.strip() for value in diagnosis.values()):
         raise HeadlineContractError("headline diagnosis values must be non-empty")
     top3 = candidate.get("top3")
-    if not isinstance(top3, list) or len(top3) != 3:
-        raise HeadlineContractError("headline output must contain exactly Top 3")
+    if not isinstance(top3, list) or not 1 <= len(top3) <= 3:
+        raise HeadlineContractError("headline output must contain one to three candidates")
     if any(not isinstance(item, dict) or set(item) != _TITLE_FIELDS for item in top3):
         raise HeadlineContractError("each headline must contain title and reason only")
     if any(
@@ -45,11 +45,11 @@ def build_headline_artifact(
     ):
         raise HeadlineContractError("headline title and reason must be non-empty")
     titles = [item["title"].strip() for item in top3]
-    if len(set(titles)) != 3:
-        raise HeadlineContractError("Top 3 headlines must be unique")
+    if len(set(titles)) != len(titles):
+        raise HeadlineContractError("headline candidates must be unique")
     recommended = candidate.get("recommended")
     if recommended not in titles:
-        raise HeadlineContractError("recommended headline must come from Top 3")
+        raise HeadlineContractError("recommended headline must come from the candidates")
     for forbidden in context.get("must_avoid", []):
         if any(forbidden in title for title in titles):
             raise HeadlineContractError(f"headline contains must_avoid: {forbidden}")

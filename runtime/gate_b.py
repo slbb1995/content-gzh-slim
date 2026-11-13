@@ -34,7 +34,7 @@ def render_gate_b(
         "# Gate B：正文与标题确认\n\n"
         "## 完整正文\n\n"
         f"{draft_body.rstrip()}\n\n"
-        "## Top 3 标题\n\n"
+        "## 标题建议\n\n"
         f"{top3}\n\n"
         f"## 推荐标题\n\n{headline['recommended']}\n\n"
         "## 保存目标预览\n\n"

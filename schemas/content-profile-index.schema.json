@@ -4,11 +4,146 @@
   "title": "Content Profile Index v1 compatible copy",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contract_version", "knowledge_base_id", "profiles", "revision"],
+  "required": [
+    "contract_version",
+    "knowledge_base_id",
+    "profiles",
+    "revision"
+  ],
   "properties": {
-    "contract_version": {"const": "content-source-v1"},
-    "knowledge_base_id": {"type": "string", "pattern": "^KB-[A-F0-9]{16}$"},
-    "profiles": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["profile_id", "display_name", "aliases", "object_ref", "status", "is_primary", "content_sha256"], "properties": {"profile_id": {"type": "string", "pattern": "^PRF-[A-F0-9]{16}$"}, "display_name": {"type": "string", "minLength": 1}, "aliases": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}, "object_ref": {"type": "string", "minLength": 1}, "status": {"enum": ["active", "disabled"]}, "is_primary": {"type": "boolean"}, "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}},
-    "revision": {"type": "integer", "minimum": 1}
+    "contract_version": {
+      "const": "content-source-v1"
+    },
+    "knowledge_base_id": {
+      "type": "string",
+      "pattern": "^KB-[A-F0-9]{16}$"
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile_id",
+          "display_name",
+          "aliases",
+          "object_ref",
+          "status",
+          "is_primary"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "pattern": "^PRF-[A-F0-9]{16}$"
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "aliases": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "object_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "active",
+              "disabled"
+            ]
+          },
+          "is_primary": {
+            "type": "boolean"
+          },
+          "content_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "source_kind": {
+            "const": "profile_directory_v1"
+          },
+          "profile_files": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "persona",
+              "style"
+            ],
+            "properties": {
+              "persona": {
+                "type": "string",
+                "minLength": 1
+              },
+              "style": {
+                "type": "string",
+                "minLength": 1
+              },
+              "business": {
+                "type": "string",
+                "minLength": 1
+              },
+              "editorial": {
+                "type": "string",
+                "minLength": 1
+              },
+              "headline": {
+                "type": "string",
+                "minLength": 1
+              },
+              "examples": {
+                "type": "string",
+                "minLength": 1
+              },
+              "visual": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "content_sha256"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "source_kind"
+                  ]
+                },
+                {
+                  "required": [
+                    "profile_files"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "required": [
+              "source_kind",
+              "profile_files"
+            ],
+            "not": {
+              "required": [
+                "content_sha256"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    }
   }
 }

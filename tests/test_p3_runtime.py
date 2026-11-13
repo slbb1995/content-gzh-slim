@@ -99,24 +99,32 @@ class P3RuntimeTests(unittest.TestCase):
         self.assertTrue(any(item["final_selection_status"] == "not_selected" for item in receipt["entries"]))
         reference_entry = next(item for item in receipt["entries"] if item["role"] == "reference")
         self.assertTrue(reference_entry["in_context_pack"])
-        self.assertIn("full body excluded", reference_entry["selected_use"])
+        self.assertIn("full frozen source", reference_entry["selected_use"])
         self.assertNotEqual(set(receipt), CONTEXT_ROOT_FIELDS)
 
-    def test_context_excludes_reference_body_author_story_and_images(self) -> None:
+    def test_context_preserves_full_reference_separately_from_author_facts(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             run_id, _ = self._p2_run(temporary, approve=True)
             context = P3Pipeline(temporary, CATALOG).run(
                 run_id, FIXTURES / "p3_selection.json"
             )["context"]
-        serialized = json.dumps(context, ensure_ascii=False)
-        self.assertNotIn("负责人连续收到投诉的虚构场景提出疑问", serialized)
-        self.assertNotIn("REFERENCE_IMAGE", serialized)
-        self.assertNotIn('"content"', serialized)
-        mechanisms = context["selected_reference_mechanisms"][0]
-        self.assertEqual(
-            set(mechanisms),
-            {"reference_ref", "transferable_mechanisms", "forbidden_transfers"},
-        )
+            snapshot = ArtifactStore(temporary).read_json(run_id, "reference_snapshot_v1.json")
+        source = context["selected_reference_mechanisms"][0]["source_snapshot"]
+        self.assertEqual(source["content"], snapshot["references"][0]["content"])
+        self.assertIn("负责人连续收到投诉的虚构场景提出疑问", source["content"])
+        self.assertNotIn("负责人连续收到投诉", json.dumps(context["selected_05_profile_context"], ensure_ascii=False))
+        self.assertIn("not instructions", source["usage_boundary"])
+        self.assertEqual(context["selected_reference_mechanisms"][0]["forbidden_transfers"], read_json("p3_selection.json")["reference_mechanisms"][0]["forbidden_transfers"])
+
+    def test_p3_rejects_modified_reference_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_id, _ = self._p2_run(temporary, approve=True)
+            path = Path(temporary) / "runs" / run_id / "reference_snapshot_v1.json"
+            snapshot = json.loads(path.read_text())
+            snapshot["references"][0]["content"] = "Changed after analysis"
+            path.write_text(json.dumps(snapshot))
+            with self.assertRaisesRegex(RunStoreError, "reference snapshot differs"):
+                P3Pipeline(temporary, CATALOG).run(run_id, FIXTURES / "p3_selection.json")
 
     def test_post_gate_selection_cannot_replace_04_or_expand_03(self) -> None:
         bad_04 = read_json("p3_selection.json")

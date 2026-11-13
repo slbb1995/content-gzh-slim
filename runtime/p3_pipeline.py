@@ -11,6 +11,7 @@ from .artifact_store import ArtifactStore, ArtifactStoreError
 from .context_contract import build_article_context, verify_writer_input
 from .frozen_projection import FrozenFixtureProjector
 from .receipt_finalizer import finalize_retrieval_receipt
+from .reference_prep import FixtureReferencePreparer
 from .run_store import RunStore, RunStoreError
 
 
@@ -67,8 +68,12 @@ class P3Pipeline:
         original_receipt = self.artifacts.read_json(run_id, "retrieval_receipt.json")
         analysis = self.artifacts.read_json(run_id, "analysis_v1.json")
         approved = materialize_approved_direction(run, direction, original_receipt)
+        frozen_sources = self.artifacts.read_json(run_id, "reference_snapshot_v1.json")
+        if frozen_sources != FixtureReferencePreparer(self.catalog_path).prepare(run["task_input"]["references"]):
+            raise RunStoreError("P2 reference snapshot differs from the frozen source catalog")
         projection = FrozenFixtureProjector(self.catalog_path).project(
-            selection, run, approved, analysis
+            selection, run, approved, analysis,
+            frozen_sources,
         )
         context = build_article_context(run, approved, projection, selection)
         finalized_receipt = finalize_retrieval_receipt(original_receipt, context)

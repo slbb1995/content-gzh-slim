@@ -121,6 +121,10 @@ class ControlledFixtureRetriever:
                 "snippet_count": len(anchors),
                 "character_count": len(json.dumps(anchors, ensure_ascii=False)),
             }
+            if profile.get("profile_documents"):
+                ip_anchor["profile_documents"] = profile["profile_documents"]
+                ip_anchor["snippet_count"] += len(profile["profile_documents"])
+                ip_anchor["character_count"] += sum(len(item["text"]) for item in profile["profile_documents"])
             if ip_status == "limited":
                 warnings.append("指定 IP 的 fixture 资料有限，只使用已确认锚点，不补造个人事实。")
             access_log.append(

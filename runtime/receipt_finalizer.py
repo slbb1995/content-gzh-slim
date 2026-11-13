@@ -18,7 +18,7 @@ def finalize_retrieval_receipt(
         "05": {
             context["selected_05_profile_context"].get("ip_ref")
         }
-        if context["selected_05_profile_context"].get("confirmed_fragments")
+        if context["selected_05_profile_context"].get("confirmed_fragments") or context["selected_05_profile_context"].get("profile_documents")
         else set(),
         "03": {item["ref"] for item in context["selected_03_business_context"]},
         "04": {
@@ -42,9 +42,10 @@ def finalize_retrieval_receipt(
         updated["in_context_pack"] = is_selected
         if is_selected:
             if role == "reference":
-                updated["selected_use"] = "benchmark mechanisms only; full body excluded"
+                has_source = any(item.get("source_snapshot") for item in context["selected_reference_mechanisms"] if item["reference_ref"] == entry["source_ref"])
+                updated["selected_use"] = "mechanisms and attributed full frozen source" if has_source else "benchmark mechanisms only; full body excluded"
             elif role == "05":
-                updated["selected_use"] = "same-IP confirmed profile fragments"
+                updated["selected_use"] = "same-IP profile documents and selected confirmed fragments"
             updated["not_selected_reason"] = None
         elif updated.get("not_selected_reason") is None:
             updated["not_selected_reason"] = "not selected for final Article Context"

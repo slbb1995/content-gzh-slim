@@ -106,6 +106,11 @@ def _verify_real_run(store: Path, run_id: str, *, identity: str, verify_sources:
         ).hexdigest()
         if expected != actual:
             raise ContentSourceError("source snapshot does not match the frozen Run identity")
+        if snapshot.get("catalog_sha256"):
+            catalog = ArtifactStore(store).read_json(run_id, "source_catalog.json")
+            digest = hashlib.sha256((json.dumps(catalog, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode()).hexdigest()
+            if digest != snapshot["catalog_sha256"]:
+                raise ContentSourceError("source catalog does not match the frozen source snapshot")
         if verify_sources:
             verify_source_snapshot(snapshot, lark_identity=identity)
     return snapshot
@@ -121,6 +126,13 @@ def _derived_adapter(store: Path, run_id: str, *, identity: str, verify_sources:
     if backend == "obsidian":
         profile_id = run.get("ip_identity", {}).get("profile_id") or "none"
         rendered = snapshot["output_template"].replace("{profile_id}", profile_id)
+        if any(token in rendered for token in ("{year}", "{month}", "{week}")):
+            from datetime import datetime
+            from zoneinfo import ZoneInfo
+            created = datetime.fromisoformat(run["created_at"].replace("Z", "+00:00"))
+            local = created.astimezone(ZoneInfo(snapshot.get("output_timezone", "UTC")))
+            for token, value in (("year", local.year), ("month", local.month), ("week", (local.day - 1) // 7 + 1)):
+                rendered = rendered.replace("{" + token + "}", str(value))
         if "{" in rendered or "}" in rendered:
             raise ContentSourceError("Manifest output template contains an unsupported placeholder")
         relative_dir = (PurePosixPath(snapshot["output_locator"]) / PurePosixPath(rendered)).as_posix()
@@ -187,6 +199,8 @@ def build_parser() -> argparse.ArgumentParser:
     configure.add_argument("--identity", choices=("user", "bot"), default="user")
     configure.add_argument("--default-profile")
     configure.add_argument("--default-no-ip", action="store_true")
+    configure.add_argument("--manifest-ref", help="vault-relative Manifest for an existing non-numbered personal vault")
+    configure.add_argument("--timezone", help="IANA timezone used by year/month/week output placeholders")
 
     start = commands.add_parser("start")
     start.add_argument("--input", required=True, type=Path)
@@ -292,6 +306,8 @@ def main() -> int:
                         lark_identity=args.identity,
                         default_profile=args.default_profile,
                         default_no_ip=args.default_no_ip,
+                        manifest_ref=args.manifest_ref,
+                        timezone=args.timezone,
                     )
                 )
             else:
@@ -301,6 +317,8 @@ def main() -> int:
                     lark_identity=args.identity,
                     default_profile=args.default_profile,
                     default_no_ip=args.default_no_ip,
+                    manifest_ref=args.manifest_ref,
+                    timezone=args.timezone,
                 )
                 _emit(
                     {

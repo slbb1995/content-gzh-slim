@@ -15,7 +15,7 @@ Analyze each complete reference independently before comparing them. Preserve on
 9. `emotion_and_pacing`: emotional curve and pacing.
 10. `ending_and_cta`: ending mechanism and CTA.
 11. `transferable_mechanisms`: reusable hook, structure, argument, or pacing mechanisms.
-12. `forbidden_transfers`: identity, experience, cases, proprietary facts, recognizable wording, and promises that must not transfer.
+12. `forbidden_transfers`: facts or experiences that must not be attributed to this author, unsupported promises, and wording that should not be copied. Attributed external stories may remain external stories; a user-supplied draft is editable text, not independent verification.
 
 Mark `source_completeness` as `full`. Never analyze a title, abstract, or summary as if it were the full article.
 
@@ -68,3 +68,15 @@ The public entry renders the direction. Do not approve it. Valid user decisions 
 - `不采用`
 
 Any vague reply remains unapproved.
+
+## Editorial decisions within the existing direction
+
+Start with the reader's reason to open and continue, then the author's intended value. Record the concrete assets to retain in `benchmark_transfer` and the ordered `structure`: identify the source passages, phrases or causal turns that carry title tension, scenes/dialogue, reasoning, useful detail and emotion, rather than naming only abstract mechanisms. Distinguish a passage's useful force from any unsupported clause or unclear attribution that needs correction. Do not turn a compelling question into a generic knowledge heading merely to match the business.
+
+Use `opening_hook`, `target_reader_and_promise` and section purposes to explain where the intended reader can recognize their own situation. Judge this against the article's purpose: broader discussion and targeted consultation can need different openings. When adapting, notice if audience cues have been delayed or removed. Do not require an industry label in every opening or paragraph.
+
+Choose the amount of intervention from the request and material: preserve-and-adapt a strong reference; supplement a sound idea with missing support; compose when there is no usable draft; edit locally when the user supplies a draft and bounded feedback. State this choice in the existing `writer_mode_reason` and section purposes. Genre (`ganhuo`/`huati`) does not force the degree of rewriting.
+
+The `business_connection` may be discussion, a related article, a concrete consultation invitation, or no direct CTA. Say what specific reader problem could justify consultation. If inviting action, use the current route supported by the supplied evidence or this task's explicit user instruction, and explain what relevant situation the reader could bring. Keep a one-article choice scoped to this task. Do not force an unrelated story back to the author's product, invent a giveaway or service promise, or treat every comment/download as a qualified inquiry.
+
+Read the selected Profile documents by role, preserving complete thought passages and pending-fact qualifications. Author preference guides judgment; repeated phrases and one liked example are not mandatory openings or endings. Do not ask the user to fill another editorial form.
